@@ -8,7 +8,7 @@
 
 const LIN_CONFIG = {
   driveRootFolderId: "14u6LT8E1xKBLbHwq90SySmfou0oVlSqR",
-  appsScriptApiUrl: "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE",
+  appsScriptApiUrl: "https://script.google.com/macros/s/AKfycbzGhRB3htkXMjo1dyUdDNncYnIpOm333dvI51eyLrMBLE1NjtdGlB7Vpmtp7ucxf_Yq/exec",
 
   // Recommended for GitHub Pages -> Apps Script smoke tests.
   // Apps Script ContentService supports JSONP by serving JavaScript MIME output.
