@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lin | Phase 4A Cloud Folder Ingestion Smoke Test</title>
+  <meta name="description" content="Lin Phase 4A GitHub Pages and Apps Script cloud-folder ingestion smoke test." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="notifications-on" data-theme="dark">
+  <div class="hud-bg" aria-hidden="true">
+    <span class="grid-layer"></span>
+    <span class="scan-line"></span>
+  </div>
+
+  <header class="topbar">
+    <div class="institution-block">
+      <span>The George Washington University</span>
+      <span>School of Engineering and Applied Science</span>
+    </div>
+
+    <div class="brand-block">
+      <div class="wordmark">Lin</div>
+      <div class="subtitle">Multi-Model Simulation Demo | Phase 4A Cloud Folder Ingestion</div>
+    </div>
+
+    <div class="control-strip" aria-label="Interface controls">
+      <button class="icon-button" id="themeToggle" title="Toggle light or dark theme" aria-label="Toggle theme">
+        <span class="icon-dot theme-dot"></span>
+      </button>
+      <button class="icon-button notification-button" id="notificationToggle" title="Toggle notification pulse" aria-label="Toggle notification pulse">
+        <span class="notification-indicator"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <aside class="side-rail" aria-label="Primary navigation">
+      <button class="nav-chip active" data-page="portfolio" aria-current="page"><span>01</span> Portfolio</button>
+      <button class="nav-chip" data-page="deepDive"><span>02</span> Deep Dive</button>
+      <button class="nav-chip" data-page="cloudSync"><span>03</span> Cloud Sync</button>
+      <button class="nav-chip" data-page="governance"><span>04</span> Governance</button>
+      <button class="nav-chip" data-page="lookup"><span>05</span> Lookup</button>
+    </aside>
+
+    <section class="workspace">
+      <section class="page active" id="page-portfolio" aria-labelledby="portfolioTitle">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">01 Portfolio Command Center</p>
+            <h1 id="portfolioTitle">Synthetic project signal overview</h1>
+          </div>
+          <div class="legend" aria-label="Status legend">
+            <span class="legend-item green">Green</span>
+            <span class="legend-item amber">Amber</span>
+            <span class="legend-item red">Red</span>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="portfolioKpis" aria-live="polite"></div>
+
+        <div class="panel toolbar-panel">
+          <div class="toolbar-left">
+            <span class="label">Status filter</span>
+            <button class="filter-chip active" data-filter="ALL">All</button>
+            <button class="filter-chip green" data-filter="GREEN">Green</button>
+            <button class="filter-chip amber" data-filter="AMBER">Amber</button>
+            <button class="filter-chip red" data-filter="RED">Red</button>
+          </div>
+          <div class="toolbar-right">
+            <span class="sync-pill" id="portfolioSyncPill">Sample roster loaded</span>
+          </div>
+        </div>
+
+        <div class="project-grid" id="projectGrid"></div>
+      </section>
+
+      <section class="page" id="page-deepDive" aria-labelledby="deepDiveTitle">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">02 Project Deep Dive</p>
+            <h1 id="deepDiveTitle">Module signal inspection</h1>
+          </div>
+          <label class="select-wrap">
+            <span>Project</span>
+            <select id="projectSelect"></select>
+          </label>
+        </div>
+
+        <div class="deep-grid">
+          <article class="panel project-summary-panel" id="projectSummary"></article>
+          <article class="panel risk-lens-panel" id="riskLensPanel"></article>
+        </div>
+
+        <div class="module-grid" id="moduleGrid"></div>
+      </section>
+
+      <section class="page" id="page-cloudSync" aria-labelledby="cloudSyncTitle">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">03 Cloud Folder Sync</p>
+            <h1 id="cloudSyncTitle">Phase 4A ingestion smoke test</h1>
+          </div>
+          <button class="primary-action" id="runSmokeTest">Run smoke test</button>
+        </div>
+
+        <div class="cloud-layout">
+          <article class="panel config-panel">
+            <h2>Bridge configuration</h2>
+            <dl class="config-list">
+              <div>
+                <dt>Cloud folder root ID</dt>
+                <dd id="configRootId">-</dd>
+              </div>
+              <div>
+                <dt>Apps Script API URL</dt>
+                <dd id="configApiUrl">-</dd>
+              </div>
+              <div>
+                <dt>Transport</dt>
+                <dd id="configTransport">-</dd>
+              </div>
+            </dl>
+            <p class="fine-print">The public UI uses generic cloud-folder language. Provider-specific setup details stay in the configuration and documentation files.</p>
+          </article>
+
+          <article class="panel smoke-panel">
+            <div class="smoke-header">
+              <h2>Expected Phase 4A output</h2>
+              <span class="status-pill pending" id="phaseReadinessPill">Not run</span>
+            </div>
+            <div class="smoke-results" id="smokeResults" aria-live="polite"></div>
+          </article>
+        </div>
+
+        <article class="panel endpoint-panel">
+          <h2>Endpoint monitor</h2>
+          <div class="endpoint-grid" id="endpointGrid"></div>
+          <pre class="log-console" id="syncLog" aria-live="polite">Awaiting smoke test...</pre>
+        </article>
+      </section>
+
+      <section class="page" id="page-governance" aria-labelledby="governanceTitle">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">04 Governance Decision Card</p>
+            <h1 id="governanceTitle">Signal to accountable action</h1>
+          </div>
+          <span class="sync-pill">Synthetic decision logic</span>
+        </div>
+
+        <div class="governance-card panel" id="governanceCard"></div>
+      </section>
+
+      <section class="page" id="page-lookup" aria-labelledby="lookupTitle">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">05 Lookup / Calculation Definitions</p>
+            <h1 id="lookupTitle">Terms, formulas, and explanations</h1>
+          </div>
+          <input class="lookup-search" id="lookupSearch" type="search" placeholder="Search definitions" aria-label="Search definitions" />
+        </div>
+
+        <div class="lookup-grid" id="lookupGrid"></div>
+      </section>
+    </section>
+  </main>
+
+  <aside class="definition-drawer" id="definitionDrawer" aria-live="polite" aria-hidden="true">
+    <button class="drawer-close" id="drawerClose" aria-label="Close definition">x</button>
+    <p class="eyebrow">Definition</p>
+    <h2 id="drawerTerm">Term</h2>
+    <p id="drawerDefinition">Select a highlighted term to view its definition.</p>
+    <p class="drawer-formula" id="drawerFormula"></p>
+  </aside>
+
+  <footer class="footer">
+    <p>Multi-Model Simulation Demo for Doctor of Engineering in Engineering Management Praxis by Nyan Lin Tun</p>
+    <small>
+      Multi-model simulation prepared for Doctor of Engineering praxis in Engineering Management at The George Washington University, School of Engineering and Applied Science.
+      This demo uses synthetic project folders and multi-model simulations to demonstrate multi-model capability of probabilistic EVM forecasting, anomaly detection, document-risk extraction, signal synthesis, and governance recommendation logic.
+      It is not an official George Washington University system, not a commercial product, and not intended for public release, procurement, operations, or official project-control use.
+    </small>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
