@@ -10,12 +10,8 @@ const LIN_CONFIG = {
   driveRootFolderId: "14u6LT8E1xKBLbHwq90SySmfou0oVlSqR",
   appsScriptApiUrl: "https://script.google.com/macros/s/AKfycbzGhRB3htkXMjo1dyUdDNncYnIpOm333dvI51eyLrMBLE1NjtdGlB7Vpmtp7ucxf_Yq/exec",
 
-  // Recommended for GitHub Pages -> Apps Script smoke tests.
-  // Apps Script ContentService supports JSONP by serving JavaScript MIME output.
   transport: "jsonp",
 
-  // Keep true so the HUD remains useful before the Apps Script URL is pasted.
-  // A live Phase 4A pass still requires the Apps Script bridge to respond.
   useSampleDataWhenUnconfigured: true,
 
   phaseLabel: "Phase 4A",
