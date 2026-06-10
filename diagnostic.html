@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lin Phase 4A Bridge Diagnostic</title>
-  <link rel="stylesheet" href="styles.css?v=phase4a-hotfix-002" />
+  <link rel="stylesheet" href="styles.css?v=phase4a-hotfix-003" />
   <style>
     .diagnostic-wrap { max-width: 1100px; margin: 40px auto; padding: 24px; }
     .diagnostic-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
@@ -25,7 +25,7 @@
     </div>
     <pre class="log-console" id="diagnosticLog">Ready. Click a test button.</pre>
   </div>
-  <script src="config.js?v=phase4a-hotfix-002"></script>
+  <script src="config.js?v=phase4a-hotfix-003"></script>
   <script>
     const log = document.getElementById('diagnosticLog');
     function setLog(value) { log.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); }
@@ -37,7 +37,7 @@
         const timeout = setTimeout(() => {
           cleanup();
           reject(new Error('Timed out waiting for Apps Script response.'));
-        }, 20000);
+        }, 60000);
         function cleanup() {
           clearTimeout(timeout);
           if (script.parentNode) script.parentNode.removeChild(script);

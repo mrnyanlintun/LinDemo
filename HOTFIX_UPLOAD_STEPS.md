@@ -1,28 +1,62 @@
-# Lin Phase 4A Hotfix v0.2
+# Lin Phase 4A Hotfix v0.3 - Fast Apps Script Bridge
 
-This hotfix keeps the same GitHub Pages + Apps Script architecture and fixes the current browser-side loading issue by:
+This hotfix addresses portfolio/project endpoint timeouts.
 
-1. Preserving the live Apps Script /exec URL in config.js.
-2. Adding cache-busting query strings to index.html so the browser reloads styles.css, config.js, and app.js fresh.
-3. Adding diagnostic.html so the Apps Script bridge can be tested without opening the browser console.
+## What changed
 
-## Upload steps with GitHub Desktop
+1. `apps_script/Code.gs` is replaced with a faster v0.3 bridge.
+   - It directly checks `00_Portfolio_Index/cloud_folder_index.json`.
+   - It uses the locked 12-project synthetic roster for metric values.
+   - It scans Google Drive only for folder/file verification.
+   - The project endpoint no longer calls the full portfolio endpoint.
+   - It caches the portfolio response for a short period.
 
-1. Unzip this folder.
-2. Open GitHub Desktop.
-3. Choose Repository -> Show in Explorer.
-4. Copy every file from this hotfix folder into the LinDemo repo root, replacing existing files when asked.
-5. Return to GitHub Desktop.
-6. Commit message: Apply Phase 4A hotfix
-7. Click Commit to main.
-8. Click Push origin.
-9. Wait for GitHub Pages deployment to finish in the Actions tab.
-10. Open https://mrnyanlintun.github.io/LinDemo/?v=phase4a-hotfix-002
+2. `app.js` JSONP timeout is increased to 60 seconds.
+3. `diagnostic.html` timeout is increased to 60 seconds.
+4. Cache-busting asset query strings are updated to `phase4a-hotfix-003`.
 
-## Diagnostic page
+## Upload steps
 
-After deployment, open:
+### A. Update Apps Script first
 
-https://mrnyanlintun.github.io/LinDemo/diagnostic.html?v=phase4a-hotfix-002
+1. Open Apps Script: `Lin Phase 4A Bridge`.
+2. Open `Code.gs`.
+3. Replace the whole file with `apps_script/Code.gs` from this hotfix.
+4. Save.
+5. Run `testPortfolio`.
+6. Run `testProject`.
+7. Deploy: `Deploy -> Manage deployments -> Edit pencil -> New version -> Deploy`.
+8. Keep the same `/exec` URL.
 
-Click Test health and Test portfolio. The portfolio output should show ok true, counts total 12, and readyForPhase4B true.
+### B. Update GitHub Pages files
+
+1. Copy `index.html`, `app.js`, `diagnostic.html`, and `config.js` into the repo root.
+2. Commit message: `Apply Phase 4A fast bridge hotfix`.
+3. Push to `main`.
+4. Wait for the Pages deployment to finish.
+
+### C. Test
+
+Open:
+
+```text
+https://mrnyanlintun.github.io/LinDemo/diagnostic.html?v=phase4a-hotfix-003
+```
+
+Run:
+
+```text
+Test health
+Test portfolio
+Test project SYN-DES-001
+Test audit SYN-DES-001
+Test definitions
+```
+
+Then open:
+
+```text
+https://mrnyanlintun.github.io/LinDemo/?v=phase4a-hotfix-003
+```
+
+Go to `03 Cloud Sync` and click `Run smoke test`.

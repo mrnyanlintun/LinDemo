@@ -559,7 +559,7 @@
     return new Promise((resolve, reject) => {
       const callbackName = `linJsonp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const script = document.createElement("script");
-      const timer = window.setTimeout(() => cleanup(new Error("Apps Script JSONP request timed out.")), 18000);
+      const timer = window.setTimeout(() => cleanup(new Error("Apps Script JSONP request timed out.")), 60000);
 
       function cleanup(error, payload) {
         window.clearTimeout(timer);

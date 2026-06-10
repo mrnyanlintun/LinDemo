@@ -1,11 +1,19 @@
 /**
- * Lin Phase 4A Apps Script bridge
+ * Lin Phase 4A Apps Script bridge - fast bridge v0.3
  * ------------------------------------------------------------
  * Purpose:
  *   Read the synthetic Lin_Demo_Data_v0_2 cloud folder from Google Drive,
  *   locate 00_Portfolio_Index/cloud_folder_index.json, inspect the 12
  *   synthetic project folders, and return smoke-test JSON/JSONP to the
  *   GitHub Pages HUD frontend.
+ *
+ * v0.3 speed changes:
+ *   - Directly checks the known 00_Portfolio_Index folder instead of a
+ *     recursive root search.
+ *   - Uses the locked synthetic roster as the metric baseline and scans
+ *     Drive only for folder/file verification.
+ *   - Project endpoint no longer calls the full portfolio endpoint.
+ *   - Adds short CacheService caching for the portfolio response.
  *
  * Security note:
  *   This script is a read-only ingestion smoke-test bridge for synthetic
@@ -15,7 +23,7 @@
  */
 
 var LIN_DEFAULT_ROOT_FOLDER_ID = '14u6LT8E1xKBLbHwq90SySmfou0oVlSqR';
-var LIN_API_VERSION = 'lin-phase4a-apps-script-v0.1';
+var LIN_API_VERSION = 'lin-phase4a-apps-script-v0.3-fast-bridge';
 
 var LIN_EXPECTED = {
   rootName: 'Lin_Demo_Data_v0_2',
@@ -44,23 +52,47 @@ var LIN_EXPECTED = {
   ]
 };
 
+var LIN_CATEGORY_FOLDERS = [
+  { folderName: '01_Design_Only_Projects', type: 'Design', codeToken: 'DES' },
+  { folderName: '02_Construction_Only_Projects', type: 'Construction', codeToken: 'CON' },
+  { folderName: '03_Combined_Design_Construction_Projects', type: 'Combined', codeToken: 'CMB' }
+];
+
+var LIN_ROSTER = [
+  { code: 'SYN-DES-001', projectName: 'Terminal Airside Utilities Design', type: 'Design', status: 'GREEN', health: 90, cpi: 1.04, spi: 1.01, bacM: 88.6, p50EacM: 85.192, p80EacM: 86.828, posteriorRisk: 0.16, cusum: 0.8, flaggedRfis: 1, conflicts: 0 },
+  { code: 'SYN-DES-002', projectName: 'Laboratory Renovation Design', type: 'Design', status: 'AMBER', health: 64, cpi: 0.95, spi: 0.92, bacM: 40.1, p50EacM: 42.211, p80EacM: 44.338, posteriorRisk: 0.42, cusum: 2.1, flaggedRfis: 5, conflicts: 1 },
+  { code: 'SYN-DES-003', projectName: 'Central Plant Controls Design', type: 'Design', status: 'GREEN', health: 94, cpi: 1.03, spi: 1.04, bacM: 52.4, p50EacM: 50.874, p80EacM: 52.034, posteriorRisk: 0.19, cusum: 1.0, flaggedRfis: 1, conflicts: 0 },
+  { code: 'SYN-DES-004', projectName: 'Secure Communications Backbone Design', type: 'Design', status: 'RED', health: 40, cpi: 0.82, spi: 0.78, bacM: 67.8, p50EacM: 82.683, p80EacM: 89.728, posteriorRisk: 0.71, cusum: 5.8, flaggedRfis: 13, conflicts: 3 },
+  { code: 'SYN-CON-005', projectName: 'Concourse MEP Fit-Out Construction Administration', type: 'Construction', status: 'RED', health: 32, cpi: 0.83, spi: 0.79, bacM: 161.9, p50EacM: 195.060, p80EacM: 212.849, posteriorRisk: 0.76, cusum: 6.3, flaggedRfis: 13, conflicts: 3 },
+  { code: 'SYN-CON-006', projectName: 'Facility Security Integration Construction Administration', type: 'Construction', status: 'AMBER', health: 62, cpi: 0.92, spi: 0.92, bacM: 31.8, p50EacM: 34.565, p80EacM: 36.432, posteriorRisk: 0.45, cusum: 2.7, flaggedRfis: 5, conflicts: 1 },
+  { code: 'SYN-CON-007', projectName: 'Emergency Power Resilience Construction Administration', type: 'Construction', status: 'GREEN', health: 92, cpi: 1.04, spi: 1.04, bacM: 74.2, p50EacM: 71.346, p80EacM: 72.887, posteriorRisk: 0.18, cusum: 0.9, flaggedRfis: 1, conflicts: 0 },
+  { code: 'SYN-CON-008', projectName: 'Operations Center Build-Out Construction Administration', type: 'Construction', status: 'AMBER', health: 66, cpi: 0.95, spi: 0.89, bacM: 96.5, p50EacM: 101.579, p80EacM: 107.552, posteriorRisk: 0.49, cusum: 3.0, flaggedRfis: 5, conflicts: 1 },
+  { code: 'SYN-CMB-009', projectName: 'Curbside Roadway Reconfiguration', type: 'Combined', status: 'AMBER', health: 68, cpi: 0.92, spi: 0.90, bacM: 68.9, p50EacM: 74.891, p80EacM: 79.115, posteriorRisk: 0.47, cusum: 2.6, flaggedRfis: 5, conflicts: 2 },
+  { code: 'SYN-CMB-010', projectName: 'Access Control Modernization', type: 'Combined', status: 'RED', health: 32, cpi: 0.82, spi: 0.81, bacM: 235.4, p50EacM: 287.073, p80EacM: 312.565, posteriorRisk: 0.74, cusum: 6.0, flaggedRfis: 13, conflicts: 4 },
+  { code: 'SYN-CMB-011', projectName: 'Baggage Interface Works', type: 'Combined', status: 'RED', health: 34, cpi: 0.83, spi: 0.82, bacM: 148.2, p50EacM: 178.554, p80EacM: 193.553, posteriorRisk: 0.70, cusum: 5.5, flaggedRfis: 13, conflicts: 4 },
+  { code: 'SYN-CMB-012', projectName: 'Passenger Processing Hall Renewal', type: 'Combined', status: 'GREEN', health: 92, cpi: 1.03, spi: 1.00, bacM: 122.7, p50EacM: 119.126, p80EacM: 122.128, posteriorRisk: 0.21, cusum: 1.2, flaggedRfis: 1, conflicts: 0 }
+];
+
 function doGet(e) {
   var params = e && e.parameter ? e.parameter : {};
   var action = String(params.action || 'health').toLowerCase();
   var rootId = params.rootId || LIN_DEFAULT_ROOT_FOLDER_ID;
+  var forceRefresh = String(params.refresh || params.nocache || '') === '1';
 
   try {
     var payload;
     if (action === 'health') {
       payload = getHealth_(rootId);
     } else if (action === 'portfolio') {
-      payload = getPortfolio_(rootId);
+      payload = getPortfolio_(rootId, forceRefresh);
     } else if (action === 'project') {
       payload = getProject_(rootId, params.id || params.projectId || '');
     } else if (action === 'audit') {
       payload = getAudit_(rootId, params.id || params.projectId || '');
     } else if (action === 'definitions') {
       payload = getDefinitions_();
+    } else if (action === 'clearcache') {
+      payload = clearCache_();
     } else {
       payload = errorPayload_('Unknown action: ' + action, action);
     }
@@ -75,10 +107,19 @@ function testHealth() {
 }
 
 function testPortfolio() {
-  Logger.log(JSON.stringify(getPortfolio_(LIN_DEFAULT_ROOT_FOLDER_ID), null, 2));
+  Logger.log(JSON.stringify(getPortfolio_(LIN_DEFAULT_ROOT_FOLDER_ID, true), null, 2));
+}
+
+function testProject() {
+  Logger.log(JSON.stringify(getProject_(LIN_DEFAULT_ROOT_FOLDER_ID, 'SYN-DES-001'), null, 2));
+}
+
+function testAudit() {
+  Logger.log(JSON.stringify(getAudit_(LIN_DEFAULT_ROOT_FOLDER_ID, 'SYN-DES-001'), null, 2));
 }
 
 function getHealth_(rootId) {
+  var started = new Date();
   var root = DriveApp.getFolderById(rootId);
   return success_('health', {
     apiVersion: LIN_API_VERSION,
@@ -87,6 +128,7 @@ function getHealth_(rootId) {
     rootFolderName: root.getName(),
     expectedRootFolderName: LIN_EXPECTED.rootName,
     timestamp: new Date().toISOString(),
+    elapsedMs: elapsedMs_(started),
     endpoints: [
       '?action=health',
       '?action=portfolio',
@@ -97,55 +139,60 @@ function getHealth_(rootId) {
   });
 }
 
-function getPortfolio_(rootId) {
-  var root = DriveApp.getFolderById(rootId);
-  var indexFile = findFileByNameRecursive_(root, 'cloud_folder_index.json', 5);
-  var indexJson = null;
-  var indexParseError = null;
+function getPortfolio_(rootId, forceRefresh) {
+  var started = new Date();
+  var cacheKey = cacheKey_('portfolio', rootId);
 
-  if (indexFile.found) {
-    try {
-      indexJson = JSON.parse(indexFile.file.getBlob().getDataAsString());
-    } catch (err) {
-      indexParseError = err && err.message ? err.message : String(err);
+  if (!forceRefresh) {
+    var cached = CacheService.getScriptCache().get(cacheKey);
+    if (cached) {
+      var cachedPayload = JSON.parse(cached);
+      cachedPayload.data.cached = true;
+      cachedPayload.data.cacheHitTimestamp = new Date().toISOString();
+      return cachedPayload;
     }
   }
 
-  var projectsByCode = {};
-  mergeProjectList_(projectsByCode, scanProjectFolders_(root), 'folder_scan');
-
-  if (indexJson) {
-    var extracted = [];
-    extractProjectObjects_(indexJson, extracted, 0);
-    mergeProjectList_(projectsByCode, extracted, 'cloud_folder_index_json');
-  }
-
-  mergeProjectList_(projectsByCode, readCsvRecordsIfFound_(root, 'portfolio_register.csv'), 'portfolio_register_csv');
-  mergeProjectList_(projectsByCode, readCsvRecordsIfFound_(root, 'project_status_summary.csv'), 'project_status_summary_csv');
-  mergeProjectList_(projectsByCode, readCsvRecordsIfFound_(root, 'portfolio_explainability_summary.csv'), 'portfolio_explainability_summary_csv');
-
-  var projects = mapToProjectList_(projectsByCode);
-  projects.sort(function(a, b) { return String(a.code).localeCompare(String(b.code)); });
-
-  var explainAll = projects.length > 0;
-  var auditAll = projects.length > 0;
+  var root = DriveApp.getFolderById(rootId);
+  var indexInfo = getCloudFolderIndexInfo_(root);
+  var scan = scanProjectFolders_(root);
+  var scanMap = mapByCode_(scan.projects);
+  var projects = [];
   var projectChecks = [];
+  var explainAll = true;
+  var auditAll = true;
 
-  for (var i = 0; i < projects.length; i++) {
-    var check = inspectProjectFolder_(root, projects[i]);
-    projects[i].folderId = projects[i].folderId || check.folderId || '';
-    projects[i].path = projects[i].path || check.path || '';
-    projects[i].explainabilityFound = check.explainabilityFound;
-    projects[i].auditTrailsFound = check.auditTrailsFound;
+  for (var i = 0; i < LIN_ROSTER.length; i++) {
+    var rosterItem = shallowClone_(LIN_ROSTER[i]);
+    var scanned = scanMap[rosterItem.code] || null;
+    var folder = scanned ? scanned.folder : null;
+    var check = inspectProjectFolderObject_(folder, rosterItem.code, scanned ? scanned.path : '');
+
+    rosterItem.folderFound = check.folderFound;
+    rosterItem.folderId = check.folderId;
+    rosterItem.folderName = check.folderName;
+    rosterItem.path = check.path;
+    rosterItem.explainabilityFound = check.explainabilityFound;
+    rosterItem.auditTrailsFound = check.auditTrailsFound;
+    rosterItem.source = scanned ? 'folder_scan_and_locked_roster' : 'locked_roster_missing_folder';
+
+    projects.push(rosterItem);
     projectChecks.push(check);
+
     if (!check.explainabilityFound) explainAll = false;
     if (!check.auditTrailsFound) auditAll = false;
   }
 
-  var counts = summarizeProjects_(projects);
+  var detectedProjects = [];
+  for (var j = 0; j < projects.length; j++) {
+    if (projects[j].folderFound) detectedProjects.push(projects[j]);
+  }
+
+  var counts = summarizeProjects_(detectedProjects);
   var ready = Boolean(
     root.getName() === LIN_EXPECTED.rootName &&
-    indexFile.found &&
+    indexInfo.found &&
+    indexInfo.parseOk &&
     counts.total === LIN_EXPECTED.projectCount &&
     counts.types.Design === LIN_EXPECTED.typeCounts.Design &&
     counts.types.Construction === LIN_EXPECTED.typeCounts.Construction &&
@@ -157,14 +204,17 @@ function getPortfolio_(rootId) {
     auditAll
   );
 
-  return success_('portfolio', {
+  var payload = success_('portfolio', {
     apiVersion: LIN_API_VERSION,
     rootFolderDetected: true,
     rootFolderId: rootId,
     rootFolderName: root.getName(),
-    cloudFolderIndexFound: indexFile.found,
-    cloudFolderIndexPath: indexFile.path || '',
-    cloudFolderIndexParseError: indexParseError,
+    cloudFolderIndexFound: indexInfo.found,
+    cloudFolderIndexPath: indexInfo.path || '',
+    cloudFolderIndexParseOk: indexInfo.parseOk,
+    cloudFolderIndexParseError: indexInfo.parseError || '',
+    projectsDetectedByFolderScan: scan.projects.length,
+    categoryFolders: scan.categories,
     projects: projects,
     counts: counts,
     explainabilityFilesFound: explainAll,
@@ -172,57 +222,64 @@ function getPortfolio_(rootId) {
     readyForPhase4B: ready,
     projectChecks: projectChecks,
     expected: LIN_EXPECTED,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    elapsedMs: elapsedMs_(started),
+    cached: false
   });
+
+  putCacheSafely_(cacheKey, payload, 900);
+  return payload;
 }
 
 function getProject_(rootId, projectId) {
+  var started = new Date();
   if (!projectId) return errorPayload_('Missing project id.', 'project');
 
-  var portfolio = getPortfolio_(rootId);
-  var data = portfolio.data;
-  var projects = data.projects || [];
-  var selected = null;
-  for (var i = 0; i < projects.length; i++) {
-    if (String(projects[i].code).toUpperCase() === String(projectId).toUpperCase()) {
-      selected = projects[i];
-      break;
-    }
-  }
-
-  if (!selected) return errorPayload_('Project not found: ' + projectId, 'project');
+  var rosterItem = findRosterProject_(projectId);
+  if (!rosterItem) return errorPayload_('Project not found in locked roster: ' + projectId, 'project');
 
   var root = DriveApp.getFolderById(rootId);
-  var check = inspectProjectFolder_(root, selected);
-  selected.folderInspection = check;
+  var folderInfo = findProjectFolderByCode_(root, projectId);
+  var check = inspectProjectFolderObject_(folderInfo ? folderInfo.folder : null, rosterItem.code, folderInfo ? folderInfo.path : '');
+  var project = shallowClone_(rosterItem);
+  project.folderFound = check.folderFound;
+  project.folderId = check.folderId;
+  project.folderName = check.folderName;
+  project.path = check.path;
+  project.explainabilityFound = check.explainabilityFound;
+  project.auditTrailsFound = check.auditTrailsFound;
+  project.folderInspection = check;
 
   return success_('project', {
     apiVersion: LIN_API_VERSION,
-    project: selected,
-    timestamp: new Date().toISOString()
+    project: project,
+    timestamp: new Date().toISOString(),
+    elapsedMs: elapsedMs_(started)
   });
 }
 
 function getAudit_(rootId, projectId) {
+  var started = new Date();
   if (!projectId) return errorPayload_('Missing project id.', 'audit');
 
   var root = DriveApp.getFolderById(rootId);
-  var folder = findProjectFolderByCode_(root, projectId);
-  if (!folder) return errorPayload_('Project folder not found for audit endpoint: ' + projectId, 'audit');
+  var folderInfo = findProjectFolderByCode_(root, projectId);
+  if (!folderInfo || !folderInfo.folder) return errorPayload_('Project folder not found for audit endpoint: ' + projectId, 'audit');
 
-  var auditFolder = findNestedFolder_(folder, ['08_Audit_Trails']);
-  var auditFiles = auditFolder ? listFiles_(auditFolder) : [];
-  var expectedResults = expectedFileResults_(auditFolder, LIN_EXPECTED.auditFiles);
+  var auditFolder = findNestedFolder_(folderInfo.folder, ['08_Audit_Trails']);
+  var auditFileSet = fileSet_(auditFolder);
+  var expectedResults = expectedFileResultsFromSet_(auditFileSet, LIN_EXPECTED.auditFiles);
   var allFound = allExpectedFound_(expectedResults);
 
   return success_('audit', {
     apiVersion: LIN_API_VERSION,
     projectId: projectId,
     auditFolderFound: Boolean(auditFolder),
-    auditFiles: auditFiles,
+    auditFiles: fileSetToList_(auditFileSet),
     expectedAuditFiles: expectedResults,
     auditTrailsFound: allFound,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    elapsedMs: elapsedMs_(started)
   });
 }
 
@@ -256,6 +313,298 @@ function getDefinitions_() {
     count: definitions.length,
     timestamp: new Date().toISOString()
   });
+}
+
+function clearCache_() {
+  try {
+    CacheService.getScriptCache().remove(cacheKey_('portfolio', LIN_DEFAULT_ROOT_FOLDER_ID));
+  } catch (err) {
+    // Ignore cache removal errors.
+  }
+  return success_('clearcache', {
+    apiVersion: LIN_API_VERSION,
+    message: 'Portfolio cache cleared for default root folder.',
+    timestamp: new Date().toISOString()
+  });
+}
+
+function getCloudFolderIndexInfo_(root) {
+  var indexFolder = findDirectFolder_(root, '00_Portfolio_Index');
+  var info = {
+    found: false,
+    parseOk: false,
+    parseError: '',
+    path: indexFolder ? root.getName() + '/00_Portfolio_Index/cloud_folder_index.json' : ''
+  };
+
+  if (!indexFolder) return info;
+  var files = indexFolder.getFilesByName('cloud_folder_index.json');
+  if (!files.hasNext()) return info;
+
+  info.found = true;
+  try {
+    JSON.parse(files.next().getBlob().getDataAsString());
+    info.parseOk = true;
+  } catch (err) {
+    info.parseError = err && err.message ? err.message : String(err);
+  }
+  return info;
+}
+
+function scanProjectFolders_(root) {
+  var out = {
+    categories: [],
+    projects: []
+  };
+
+  for (var i = 0; i < LIN_CATEGORY_FOLDERS.length; i++) {
+    var category = LIN_CATEGORY_FOLDERS[i];
+    var categoryFolder = findDirectFolder_(root, category.folderName);
+    var categoryInfo = {
+      folderName: category.folderName,
+      type: category.type,
+      found: Boolean(categoryFolder),
+      projectCount: 0
+    };
+
+    if (categoryFolder) {
+      var folders = categoryFolder.getFolders();
+      while (folders.hasNext()) {
+        var folder = folders.next();
+        var folderName = folder.getName();
+        var code = extractProjectCode_(folderName);
+        if (!code) continue;
+        var project = {
+          code: code,
+          type: category.type,
+          folderId: folder.getId(),
+          folderName: folderName,
+          path: category.folderName + '/' + folderName,
+          folder: folder
+        };
+        out.projects.push(project);
+        categoryInfo.projectCount++;
+      }
+    }
+    out.categories.push(categoryInfo);
+  }
+  return out;
+}
+
+function inspectProjectFolderObject_(folder, code, path) {
+  var result = {
+    code: String(code || '').toUpperCase(),
+    folderFound: Boolean(folder),
+    folderId: folder ? folder.getId() : '',
+    folderName: folder ? folder.getName() : '',
+    path: path || '',
+    explainabilityFolderFound: false,
+    explainabilityFiles: expectedFileResultsFromSet_({}, LIN_EXPECTED.explainabilityFiles),
+    explainabilityFound: false,
+    auditFolderFound: false,
+    auditFiles: expectedFileResultsFromSet_({}, LIN_EXPECTED.auditFiles),
+    auditTrailsFound: false
+  };
+
+  if (!folder) return result;
+
+  var explainFolder = findNestedFolder_(folder, ['06_Model_Outputs', '06_Explainability']);
+  var explainSet = fileSet_(explainFolder);
+  result.explainabilityFolderFound = Boolean(explainFolder);
+  result.explainabilityFiles = expectedFileResultsFromSet_(explainSet, LIN_EXPECTED.explainabilityFiles);
+  result.explainabilityFound = allExpectedFound_(result.explainabilityFiles);
+
+  var auditFolder = findNestedFolder_(folder, ['08_Audit_Trails']);
+  var auditSet = fileSet_(auditFolder);
+  result.auditFolderFound = Boolean(auditFolder);
+  result.auditFiles = expectedFileResultsFromSet_(auditSet, LIN_EXPECTED.auditFiles);
+  result.auditTrailsFound = allExpectedFound_(result.auditFiles);
+
+  return result;
+}
+
+function findProjectFolderByCode_(root, code) {
+  var upper = String(code || '').toUpperCase();
+  var categoryIndex = categoryIndexForCode_(upper);
+  var firstPass = categoryIndex >= 0 ? [LIN_CATEGORY_FOLDERS[categoryIndex]] : [];
+  var secondPass = [];
+  for (var i = 0; i < LIN_CATEGORY_FOLDERS.length; i++) {
+    if (i !== categoryIndex) secondPass.push(LIN_CATEGORY_FOLDERS[i]);
+  }
+  var categories = firstPass.concat(secondPass);
+
+  for (var j = 0; j < categories.length; j++) {
+    var category = categories[j];
+    var categoryFolder = findDirectFolder_(root, category.folderName);
+    if (!categoryFolder) continue;
+    var folders = categoryFolder.getFolders();
+    while (folders.hasNext()) {
+      var folder = folders.next();
+      if (String(folder.getName()).toUpperCase().indexOf(upper) === 0) {
+        return {
+          folder: folder,
+          path: category.folderName + '/' + folder.getName(),
+          type: category.type
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function findDirectFolder_(folder, name) {
+  if (!folder) return null;
+  var folders = folder.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : null;
+}
+
+function findNestedFolder_(folder, pathParts) {
+  var current = folder;
+  for (var i = 0; i < pathParts.length; i++) {
+    if (!current) return null;
+    current = findDirectFolder_(current, pathParts[i]);
+  }
+  return current;
+}
+
+function fileSet_(folder) {
+  var out = {};
+  if (!folder) return out;
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var file = files.next();
+    out[file.getName()] = {
+      name: file.getName(),
+      id: file.getId(),
+      mimeType: file.getMimeType()
+    };
+  }
+  return out;
+}
+
+function expectedFileResultsFromSet_(fileSet, expectedNames) {
+  var results = [];
+  for (var i = 0; i < expectedNames.length; i++) {
+    var name = expectedNames[i];
+    var hit = fileSet && fileSet[name] ? fileSet[name] : null;
+    results.push({
+      name: name,
+      found: Boolean(hit),
+      fileId: hit ? hit.id : ''
+    });
+  }
+  return results;
+}
+
+function fileSetToList_(fileSet) {
+  var out = [];
+  for (var name in fileSet) {
+    if (Object.prototype.hasOwnProperty.call(fileSet, name)) out.push(fileSet[name]);
+  }
+  out.sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+  return out;
+}
+
+function allExpectedFound_(results) {
+  if (!results || results.length === 0) return false;
+  for (var i = 0; i < results.length; i++) {
+    if (!results[i].found) return false;
+  }
+  return true;
+}
+
+function summarizeProjects_(projects) {
+  var counts = {
+    total: projects.length,
+    types: { Design: 0, Construction: 0, Combined: 0 },
+    statuses: { GREEN: 0, AMBER: 0, RED: 0 },
+    averageHealth: 0
+  };
+
+  var healthTotal = 0;
+  for (var i = 0; i < projects.length; i++) {
+    var type = normalizeType_(projects[i].type);
+    var status = normalizeStatus_(projects[i].status);
+    counts.types[type] = (counts.types[type] || 0) + 1;
+    counts.statuses[status] = (counts.statuses[status] || 0) + 1;
+    healthTotal += numberOr_(projects[i].health, 0);
+  }
+  counts.averageHealth = projects.length ? Math.round(healthTotal / projects.length) : 0;
+  return counts;
+}
+
+function findRosterProject_(projectId) {
+  var upper = String(projectId || '').toUpperCase();
+  for (var i = 0; i < LIN_ROSTER.length; i++) {
+    if (LIN_ROSTER[i].code === upper) return shallowClone_(LIN_ROSTER[i]);
+  }
+  return null;
+}
+
+function mapByCode_(projects) {
+  var map = {};
+  for (var i = 0; i < projects.length; i++) {
+    if (projects[i].code) map[projects[i].code] = projects[i];
+  }
+  return map;
+}
+
+function extractProjectCode_(value) {
+  var match = String(value || '').match(/SYN-(DES|CON|CMB)-\d{3}/i);
+  return match ? match[0].toUpperCase() : '';
+}
+
+function categoryIndexForCode_(code) {
+  var upper = String(code || '').toUpperCase();
+  if (upper.indexOf('SYN-DES-') === 0) return 0;
+  if (upper.indexOf('SYN-CON-') === 0) return 1;
+  if (upper.indexOf('SYN-CMB-') === 0) return 2;
+  return -1;
+}
+
+function normalizeStatus_(status) {
+  var clean = String(status || '').toUpperCase();
+  if (clean.indexOf('RED') >= 0) return 'RED';
+  if (clean.indexOf('AMBER') >= 0 || clean.indexOf('YELLOW') >= 0) return 'AMBER';
+  if (clean.indexOf('GREEN') >= 0) return 'GREEN';
+  return 'GREEN';
+}
+
+function normalizeType_(type) {
+  var clean = String(type || '').toLowerCase();
+  if (clean.indexOf('combined') >= 0 || clean.indexOf('cmb') >= 0) return 'Combined';
+  if (clean.indexOf('construction') >= 0 || clean.indexOf('con') >= 0) return 'Construction';
+  return 'Design';
+}
+
+function numberOr_(value, fallback) {
+  var number = Number(value);
+  return isFinite(number) ? number : fallback;
+}
+
+function shallowClone_(obj) {
+  var clone = {};
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) clone[key] = obj[key];
+  }
+  return clone;
+}
+
+function elapsedMs_(started) {
+  return new Date().getTime() - started.getTime();
+}
+
+function cacheKey_(name, rootId) {
+  return 'lin4a_' + String(name || 'x') + '_' + String(rootId || '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 80);
+}
+
+function putCacheSafely_(key, payload, seconds) {
+  try {
+    var text = JSON.stringify(payload);
+    if (text.length < 95000) CacheService.getScriptCache().put(key, text, seconds || 600);
+  } catch (err) {
+    // Cache is optional. Ignore cache errors.
+  }
 }
 
 function output_(payload, callback) {
@@ -296,412 +645,4 @@ function errorPayload_(message, action) {
     timestamp: new Date().toISOString(),
     apiVersion: LIN_API_VERSION
   };
-}
-
-function scanProjectFolders_(root) {
-  var categories = [
-    { folderName: '01_Design_Only_Projects', type: 'Design' },
-    { folderName: '02_Construction_Only_Projects', type: 'Construction' },
-    { folderName: '03_Combined_Design_Construction_Projects', type: 'Combined' }
-  ];
-
-  var projects = [];
-  for (var i = 0; i < categories.length; i++) {
-    var category = categories[i];
-    var categoryFolder = findDirectFolder_(root, category.folderName);
-    if (!categoryFolder) continue;
-
-    var folders = categoryFolder.getFolders();
-    while (folders.hasNext()) {
-      var folder = folders.next();
-      var name = folder.getName();
-      var match = name.match(/^(SYN-(DES|CON|CMB)-\d{3})[_\s-]*(.*)$/i);
-      if (!match) continue;
-      projects.push({
-        code: match[1].toUpperCase(),
-        projectName: titleFromFolderName_(match[3] || match[1]),
-        type: category.type,
-        folderId: folder.getId(),
-        folderName: name,
-        path: category.folderName + '/' + name,
-        source: 'folder_scan'
-      });
-    }
-  }
-  return projects;
-}
-
-function inspectProjectFolder_(root, project) {
-  var folder = null;
-  if (project.folderId) {
-    try {
-      folder = DriveApp.getFolderById(project.folderId);
-    } catch (err) {
-      folder = null;
-    }
-  }
-  if (!folder && project.code) folder = findProjectFolderByCode_(root, project.code);
-
-  var result = {
-    code: project.code || '',
-    folderFound: Boolean(folder),
-    folderId: folder ? folder.getId() : '',
-    folderName: folder ? folder.getName() : '',
-    path: project.path || '',
-    explainabilityFolderFound: false,
-    explainabilityFiles: [],
-    explainabilityFound: false,
-    auditFolderFound: false,
-    auditFiles: [],
-    auditTrailsFound: false
-  };
-
-  if (!folder) return result;
-
-  var explainFolder = findNestedFolder_(folder, ['06_Model_Outputs', '06_Explainability']);
-  result.explainabilityFolderFound = Boolean(explainFolder);
-  result.explainabilityFiles = expectedFileResults_(explainFolder, LIN_EXPECTED.explainabilityFiles);
-  result.explainabilityFound = allExpectedFound_(result.explainabilityFiles);
-
-  var auditFolder = findNestedFolder_(folder, ['08_Audit_Trails']);
-  result.auditFolderFound = Boolean(auditFolder);
-  result.auditFiles = expectedFileResults_(auditFolder, LIN_EXPECTED.auditFiles);
-  result.auditTrailsFound = allExpectedFound_(result.auditFiles);
-
-  return result;
-}
-
-function findProjectFolderByCode_(root, code) {
-  var upper = String(code || '').toUpperCase();
-  var categories = ['01_Design_Only_Projects', '02_Construction_Only_Projects', '03_Combined_Design_Construction_Projects'];
-  for (var i = 0; i < categories.length; i++) {
-    var categoryFolder = findDirectFolder_(root, categories[i]);
-    if (!categoryFolder) continue;
-    var folders = categoryFolder.getFolders();
-    while (folders.hasNext()) {
-      var folder = folders.next();
-      if (String(folder.getName()).toUpperCase().indexOf(upper) === 0) return folder;
-    }
-  }
-  return null;
-}
-
-function findDirectFolder_(folder, name) {
-  var folders = folder.getFoldersByName(name);
-  return folders.hasNext() ? folders.next() : null;
-}
-
-function findNestedFolder_(folder, pathParts) {
-  var current = folder;
-  for (var i = 0; i < pathParts.length; i++) {
-    if (!current) return null;
-    current = findDirectFolder_(current, pathParts[i]);
-  }
-  return current;
-}
-
-function findFileByNameRecursive_(folder, fileName, maxDepth) {
-  var directFiles = folder.getFilesByName(fileName);
-  if (directFiles.hasNext()) {
-    return { found: true, file: directFiles.next(), path: folder.getName() + '/' + fileName };
-  }
-  if (maxDepth <= 0) return { found: false };
-
-  var folders = folder.getFolders();
-  while (folders.hasNext()) {
-    var child = folders.next();
-    var found = findFileByNameRecursive_(child, fileName, maxDepth - 1);
-    if (found.found) {
-      found.path = folder.getName() + '/' + found.path;
-      return found;
-    }
-  }
-  return { found: false };
-}
-
-function expectedFileResults_(folder, expectedNames) {
-  var results = [];
-  for (var i = 0; i < expectedNames.length; i++) {
-    var name = expectedNames[i];
-    var found = false;
-    var id = '';
-    if (folder) {
-      var files = folder.getFilesByName(name);
-      if (files.hasNext()) {
-        var file = files.next();
-        found = true;
-        id = file.getId();
-      }
-    }
-    results.push({ name: name, found: found, fileId: id });
-  }
-  return results;
-}
-
-function allExpectedFound_(results) {
-  if (!results || results.length === 0) return false;
-  for (var i = 0; i < results.length; i++) {
-    if (!results[i].found) return false;
-  }
-  return true;
-}
-
-function listFiles_(folder) {
-  var filesOut = [];
-  if (!folder) return filesOut;
-  var files = folder.getFiles();
-  while (files.hasNext()) {
-    var file = files.next();
-    filesOut.push({
-      name: file.getName(),
-      id: file.getId(),
-      mimeType: file.getMimeType(),
-      updated: file.getLastUpdated().toISOString()
-    });
-  }
-  return filesOut;
-}
-
-function readCsvRecordsIfFound_(root, fileName) {
-  var found = findFileByNameRecursive_(root, fileName, 5);
-  if (!found.found) return [];
-  var text = found.file.getBlob().getDataAsString();
-  var rows = Utilities.parseCsv(text);
-  if (!rows || rows.length < 2) return [];
-  var headers = rows[0];
-  var records = [];
-  for (var i = 1; i < rows.length; i++) {
-    var record = {};
-    for (var j = 0; j < headers.length; j++) {
-      record[headers[j]] = rows[i][j];
-    }
-    record.source = fileName;
-    records.push(record);
-  }
-  return records;
-}
-
-function extractProjectObjects_(value, out, depth) {
-  if (depth > 14 || value === null || value === undefined) return;
-  if (Object.prototype.toString.call(value) === '[object Array]') {
-    for (var i = 0; i < value.length; i++) extractProjectObjects_(value[i], out, depth + 1);
-    return;
-  }
-  if (typeof value !== 'object') return;
-
-  var code = getCodeFromObject_(value);
-  if (code) {
-    var clone = shallowClone_(value);
-    clone.code = clone.code || code;
-    clone.source = clone.source || 'cloud_folder_index_json';
-    out.push(clone);
-  }
-
-  for (var key in value) {
-    if (Object.prototype.hasOwnProperty.call(value, key)) {
-      extractProjectObjects_(value[key], out, depth + 1);
-    }
-  }
-}
-
-function getCodeFromObject_(obj) {
-  var candidates = ['code', 'project_code', 'projectCode', 'project_id', 'projectId', 'id', 'folder_name', 'folderName', 'path'];
-  for (var i = 0; i < candidates.length; i++) {
-    var value = getField_(obj, [candidates[i]]);
-    var match = String(value || '').match(/SYN-(DES|CON|CMB)-\d{3}/i);
-    if (match) return match[0].toUpperCase();
-  }
-  return '';
-}
-
-function mergeProjectList_(map, list, sourceName) {
-  if (!list) return;
-  for (var i = 0; i < list.length; i++) {
-    var normalized = normalizeProject_(list[i]);
-    if (!normalized.code) continue;
-    normalized.sources = normalized.sources || [];
-    normalized.sources.push(sourceName || normalized.source || 'unknown');
-
-    if (!map[normalized.code]) {
-      map[normalized.code] = normalized;
-    } else {
-      map[normalized.code] = mergeProject_(map[normalized.code], normalized);
-    }
-  }
-}
-
-function mergeProject_(existing, incoming) {
-  var merged = shallowClone_(existing);
-  for (var key in incoming) {
-    if (!Object.prototype.hasOwnProperty.call(incoming, key)) continue;
-    var value = incoming[key];
-    if (key === 'sources') {
-      merged.sources = unique_((merged.sources || []).concat(value || []));
-    } else if (value !== '' && value !== null && value !== undefined && !(typeof value === 'number' && isNaN(value))) {
-      if (merged[key] === '' || merged[key] === null || merged[key] === undefined || key === 'status' || key === 'health' || key === 'cpi' || key === 'spi' || key === 'bacM' || key === 'p50EacM' || key === 'p80EacM' || key === 'posteriorRisk' || key === 'cusum' || key === 'flaggedRfis' || key === 'conflicts') {
-        merged[key] = value;
-      }
-    }
-  }
-  return merged;
-}
-
-function normalizeProject_(raw) {
-  var code = getCodeFromObject_(raw);
-  var statusRaw = getField_(raw, ['status', 'expected_status', 'expectedStatus', 'health_status', 'healthStatus', 'gar_status', 'garStatus']);
-  var typeRaw = getField_(raw, ['type', 'project_type', 'projectType', 'category']);
-  var nameRaw = getField_(raw, ['project_name', 'projectName', 'name', 'title', 'folder_name', 'folderName']);
-
-  return {
-    code: code,
-    projectName: cleanProjectName_(nameRaw, code),
-    type: normalizeType_(typeRaw || inferTypeFromCode_(code)),
-    status: normalizeStatus_(statusRaw || inferStatusFromHealth_(getNumberField_(raw, ['health', 'health_score', 'healthScore']))),
-    health: getNumberField_(raw, ['health', 'health_score', 'healthScore']),
-    cpi: getNumberField_(raw, ['cpi', 'CPI']),
-    spi: getNumberField_(raw, ['spi', 'SPI']),
-    bacM: getNumberField_(raw, ['bac_m', 'bacM', 'BAC_M', 'bac', 'BAC']),
-    p50EacM: getNumberField_(raw, ['p50_eac_m', 'p50EacM', 'p50_eac', 'P50_EAC', 'p50']),
-    p80EacM: getNumberField_(raw, ['p80_eac_m', 'p80EacM', 'p80_eac', 'P80_EAC', 'p80']),
-    posteriorRisk: getNumberField_(raw, ['posterior_risk', 'posteriorRisk', 'risk', 'risk_score']),
-    cusum: getNumberField_(raw, ['cusum', 'CUSUM', 'cusum_score']),
-    flaggedRfis: getNumberField_(raw, ['flagged_rfis', 'flaggedRfis', 'flaggedRFIs', 'rfis', 'rfi_count']),
-    conflicts: getNumberField_(raw, ['conflicts', 'conflict_count', 'conflictCount']),
-    folderId: getField_(raw, ['folderId', 'folder_id', 'id']) || '',
-    folderName: getField_(raw, ['folderName', 'folder_name']) || '',
-    path: getField_(raw, ['path', 'folder_path', 'folderPath']) || '',
-    source: getField_(raw, ['source']) || ''
-  };
-}
-
-function mapToProjectList_(map) {
-  var projects = [];
-  for (var code in map) {
-    if (!Object.prototype.hasOwnProperty.call(map, code)) continue;
-    var project = map[code];
-    project.status = normalizeStatus_(project.status || inferStatusFromHealth_(project.health));
-    project.type = normalizeType_(project.type || inferTypeFromCode_(code));
-    if (!project.projectName || project.projectName === code) project.projectName = titleFromFolderName_(project.folderName || code);
-    projects.push(project);
-  }
-  return projects;
-}
-
-function summarizeProjects_(projects) {
-  var counts = {
-    total: projects.length,
-    types: { Design: 0, Construction: 0, Combined: 0 },
-    statuses: { GREEN: 0, AMBER: 0, RED: 0 },
-    averageHealth: 0
-  };
-  var healthTotal = 0;
-  for (var i = 0; i < projects.length; i++) {
-    var type = normalizeType_(projects[i].type);
-    var status = normalizeStatus_(projects[i].status);
-    counts.types[type] = (counts.types[type] || 0) + 1;
-    counts.statuses[status] = (counts.statuses[status] || 0) + 1;
-    healthTotal += numberOr_(projects[i].health, 0);
-  }
-  counts.averageHealth = projects.length ? Math.round(healthTotal / projects.length) : 0;
-  return counts;
-}
-
-function getField_(obj, candidates) {
-  if (!obj) return '';
-  for (var i = 0; i < candidates.length; i++) {
-    if (obj[candidates[i]] !== undefined && obj[candidates[i]] !== null && obj[candidates[i]] !== '') return obj[candidates[i]];
-  }
-
-  var normalized = {};
-  for (var key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) normalized[normalizeKey_(key)] = obj[key];
-  }
-  for (var j = 0; j < candidates.length; j++) {
-    var candidateKey = normalizeKey_(candidates[j]);
-    if (normalized[candidateKey] !== undefined && normalized[candidateKey] !== null && normalized[candidateKey] !== '') return normalized[candidateKey];
-  }
-  return '';
-}
-
-function getNumberField_(obj, candidates) {
-  var raw = getField_(obj, candidates);
-  if (raw === '' || raw === null || raw === undefined) return 0;
-  var cleaned = String(raw).replace(/[$,%]/g, '').trim();
-  var number = Number(cleaned);
-  return isFinite(number) ? number : 0;
-}
-
-function normalizeKey_(key) {
-  return String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function normalizeStatus_(status) {
-  var clean = String(status || '').toUpperCase();
-  if (clean.indexOf('RED') >= 0) return 'RED';
-  if (clean.indexOf('AMBER') >= 0 || clean.indexOf('YELLOW') >= 0) return 'AMBER';
-  if (clean.indexOf('GREEN') >= 0) return 'GREEN';
-  return 'GREEN';
-}
-
-function normalizeType_(type) {
-  var clean = String(type || '').toLowerCase();
-  if (clean.indexOf('combined') >= 0 || clean.indexOf('cmb') >= 0) return 'Combined';
-  if (clean.indexOf('construction') >= 0 || clean.indexOf('con') >= 0) return 'Construction';
-  return 'Design';
-}
-
-function inferTypeFromCode_(code) {
-  var clean = String(code || '').toUpperCase();
-  if (clean.indexOf('CMB') >= 0) return 'Combined';
-  if (clean.indexOf('CON') >= 0) return 'Construction';
-  return 'Design';
-}
-
-function inferStatusFromHealth_(health) {
-  var value = numberOr_(health, 90);
-  if (value <= 49) return 'RED';
-  if (value <= 74) return 'AMBER';
-  return 'GREEN';
-}
-
-function cleanProjectName_(value, code) {
-  var raw = String(value || '').trim();
-  if (!raw && code) return code;
-  if (code && raw.toUpperCase().indexOf(String(code).toUpperCase()) === 0) {
-    raw = raw.substring(String(code).length).replace(/^[_\s-]+/, '');
-  }
-  return titleFromFolderName_(raw || code || 'Project');
-}
-
-function titleFromFolderName_(value) {
-  return String(value || '')
-    .replace(/^SYN-(DES|CON|CMB)-\d{3}[_\s-]*/i, '')
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function numberOr_(value, fallback) {
-  var number = Number(value);
-  return isFinite(number) ? number : fallback;
-}
-
-function shallowClone_(obj) {
-  var clone = {};
-  for (var key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) clone[key] = obj[key];
-  }
-  return clone;
-}
-
-function unique_(items) {
-  var out = [];
-  var seen = {};
-  for (var i = 0; i < items.length; i++) {
-    var item = String(items[i]);
-    if (seen[item]) continue;
-    seen[item] = true;
-    out.push(item);
-  }
-  return out;
 }
