@@ -1,3 +1,11 @@
+/*
+  Lin Phase 4A configuration
+  ------------------------------------------------------------
+  1. Apps Script bridge deployed as a web app.
+  2. The deployed /exec URL is connected below.
+  3. Keep model/API keys out of this file and out of browser JavaScript.
+*/
+
 const LIN_CONFIG = {
   driveRootFolderId: "14u6LT8E1xKBLbHwq90SySmfou0oVlSqR",
   appsScriptApiUrl: "https://script.google.com/macros/s/AKfycbzGhRB3htkXMjo1dyUdDNncYnIpOm333dvI51eyLrMBLE1NjtdGlB7Vpmtp7ucxf_Yq/exec",
