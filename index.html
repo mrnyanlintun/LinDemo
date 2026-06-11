@@ -193,6 +193,15 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
 
       <section id="detail" class="page">
         <div class="detail-hero"><div class="panel hero-gauge"><div id="heroGauge" class="gauge" style="--pct:0;--gcolor:var(--red);color:var(--red)"><span class="ring"></span><div class="value"><b id="heroState">RED</b><span>Lin State</span></div></div></div><div class="panel hero-text"><div class="breadcrumbs"><a class="back-link" data-page="portfolio">Portfolio</a> / <span id="detailCode">LIN-CHS-002</span> / Deep Dive</div><h2 id="detailTitle">CHS Terminal MEP Fit-Out & Commissioning</h2><p id="detailNarrative"></p><div class="signal-dots" id="detailSignals"></div><div class="kpi-strip" id="detailKpis"></div><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button id="runSynthesis" class="action-btn primary" title="Synthesize"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12l8-6M8 12l8 6"/></svg></span><span class="btn-label">Synthesize</span></button><button class="action-btn" data-page="governance" title="Decision Card"><span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="btn-label">Decision</span></button><button id="archiveProjectBtn" class="action-btn" title="Archive this project" style="border-color:rgba(255,203,69,.52);color:var(--amber)"><span class="btn-icon" style="border-color:rgba(255,203,69,.45);color:var(--amber)"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></span><span class="btn-label">Archive</span></button></div><div id="archiveConfirmBar" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(255,203,69,.40);background:rgba(255,203,69,.06);font:800 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--amber);display:none;align-items:center;gap:10px"><span id="archiveConfirmMsg"></span><button id="archiveConfirmYes" class="mini-btn" style="border-color:rgba(255,203,69,.72);color:var(--amber);min-width:0;padding:6px 10px">Confirm</button><button id="archiveConfirmNo" class="mini-btn" style="min-width:0;padding:6px 10px">Cancel</button></div></div></div>
+        <div class="panel" style="margin-bottom:18px;">
+          <p class="eyebrow" style="margin:0 0 16px">Module Signal Radar</p>
+          <div style="display:flex;justify-content:center;align-items:center;height:280px;">
+            <canvas id="moduleRadarChart" width="280" height="280"></canvas>
+          </div>
+          <p class="fine-print" style="text-align:center;margin-top:8px;">
+            EVM · Bayesian Risk · Anomaly Detection · Document Risk
+          </p>
+        </div>
         <div class="module-grid">
           <div class="panel">
             <div class="panel-head"><div><h3>Module 01 - Hybrid Dynamic Simulation</h3><p id="evmText"></p></div><span id="evmBadge" class="tag status-red">Red</span></div>
@@ -340,7 +349,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
     function filteredProjects(){const q=document.getElementById("searchBox").value.trim().toLowerCase();let list=projects.filter(p=>(activeFilter==="ALL"||p.status===activeFilter)&&(activeTypeFilter==="ALL"||p.kind===activeTypeFilter));if(q)list=list.filter(p=>[p.title,p.code,p.agency,p.status,p.folder,p.kind].join(" ").toLowerCase().includes(q));const sort=document.getElementById("sortBox").value;list=[...list].sort((a,b)=>sort==="risk"?severityRank[b.status]-severityRank[a.status]||a.health-b.health:sort==="health"?b.health-a.health:sort==="eac"?b.p80-a.p80:a.title.localeCompare(b.title));return list}
     function renderProjects(){const grid=document.getElementById("projectGrid");grid.innerHTML=filteredProjects().map(projectCard).join("");grid.querySelectorAll("[data-open-code]").forEach(card=>card.addEventListener("click",()=>openProject(card.dataset.openCode)));grid.querySelectorAll(".small-gauge").forEach(g=>animateGauge(g,Number(g.dataset.pct),g.querySelector("[data-count]"),Number(g.dataset.pct)));renderPortfolioSummary(projects);}
     function lineChart(type,p){const c=p.cls==="red"?"#ff4f5f":p.cls==="amber"?"#ffcb45":"#36ff9a";if(type==="forecast"){const p50=p.cls==="green"?310:p.cls==="amber"?365:430,p80=p.cls==="green"?390:p.cls==="amber"?455:505;return `<svg viewBox="0 0 600 190" preserveAspectRatio="none"><defs><linearGradient id="distGrad${p.code.replace(/\W/g,'')}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#00e5ff" stop-opacity=".42"/><stop offset="1" stop-color="#00e5ff" stop-opacity=".02"/></linearGradient></defs><path d="M0,150 C60,145 88,136 128,120 C164,106 190,80 232,75 C270,70 294,92 326,92 C365,92 382,60 420,54 C460,48 498,70 536,92 C562,108 582,125 600,136 L600,190 L0,190 Z" fill="url(#distGrad${p.code.replace(/\W/g,'')})"/><path class="animated-path" d="M0,150 C60,145 88,136 128,120 C164,106 190,80 232,75 C270,70 294,92 326,92 C365,92 382,60 420,54 C460,48 498,70 536,92 C562,108 582,125 600,136" fill="none" stroke="#00e5ff" stroke-width="3"/><line class="trigger-line ${p.status==="RED"?"alert-text":""}" x1="${p80}" y1="20" x2="${p80}" y2="170" stroke="${c}" stroke-width="2" stroke-dasharray="7 7"/><text x="${p80+8}" y="34" fill="${c}" font-size="14" font-family="monospace">P80 $${p.p80.toFixed(1)}M</text><line x1="${p50}" y1="20" x2="${p50}" y2="170" stroke="#ffcb45" stroke-width="2" stroke-dasharray="7 7"/><text x="${p50+8}" y="54" fill="#ffcb45" font-size="14" font-family="monospace">P50</text></svg>`} const y1=p.cls==="red"?"60 70 82 96 112 130 140 150 158":p.cls==="amber"?"62 66 76 82 88 96 104 116 126":"80 76 74 72 69 70 68 66 64",y2=p.cls==="red"?"72 76 82 90 96 104 118 128 142":p.cls==="amber"?"74 78 84 90 94 102 112 124 132":"84 82 80 78 77 76 75 74 72";const pts1=y1.split(" ").map((y,i)=>`${i*75},${y}`).join(" "),pts2=y2.split(" ").map((y,i)=>`${i*75},${y}`).join(" ");return `<svg viewBox="0 0 600 190" preserveAspectRatio="none"><polyline class="animated-path" points="${pts1}" fill="none" stroke="${c}" stroke-width="3"/><polyline class="animated-path" points="${pts2}" fill="none" stroke="#00e5ff" stroke-width="2" opacity=".75"/><line x1="0" y1="102" x2="600" y2="102" stroke="#ffcb45" stroke-width="2" stroke-dasharray="8 7"/>${p.status!=="GREEN"?'<circle class="alert-dot" cx="450" cy="134" r="7" fill="#ff4f5f"/><circle class="alert-dot" cx="525" cy="148" r="7" fill="#ff4f5f"/><text class="alert-text" x="390" y="40" fill="#ff4f5f" font-size="14" font-family="monospace">RULE BREAK</text>':'<text x="396" y="40" fill="#36ff9a" font-size="14" font-family="monospace">WITHIN CONTROL</text>'}</svg>`}
-    function openProject(code){selected=projects.find(p=>p.code===code)||selected;renderDetail(selected);renderProjects();renderDrivePanel();renderGovernance(selected);showPage("detail");toast(`Loaded ${selected.code} deep dive.`)}
+    function openProject(code){selected=projects.find(p=>p.code===code)||selected;renderDetail(selected);renderRadarChart(selected);renderProjects();renderDrivePanel();renderGovernance(selected);showPage("detail");toast(`Loaded ${selected.code} deep dive.`)}
     function bayesSignal(p){return p.posterior>=.65?"RED":p.posterior>=.35?"AMBER":"GREEN"}
     function statusRank(v){v=String(v||"GREEN").toUpperCase();return v==="RED"?3:v==="AMBER"?2:1}
     function metricSignal(value, amber, red, reverse=false){if(reverse){return value<=red?"RED":value<=amber?"AMBER":"GREEN"}return value>=red?"RED":value>=amber?"AMBER":"GREEN"}
@@ -499,6 +508,98 @@ ${constructionTree(p)}
     document.getElementById("refreshDrive").addEventListener("click",e=>{const btn=e.currentTarget,zone=document.getElementById("syncZone"),log=document.getElementById("syncLog");btn.classList.add("syncing");btn.innerHTML=`${iconRefresh}<span class="btn-label">Scanning</span>`;zone.classList.add("syncing");document.getElementById("syncStatus").textContent="Scanning shared synthetic cloud folder index...";log.textContent=`[${now()}] Connecting to cloud folder index...`;setTimeout(()=>{log.textContent+=`\n[${now()}] Detected ${projects.length} project folders across design, construction, and combined archetypes; ${projects.reduce((a,p)=>a+getProjectManifest(p).length,0)} staged files.`},650);setTimeout(()=>{log.textContent+=`\n[${now()}] Selected folder refreshed: ${selected.folder}`},1100);setTimeout(()=>{btn.classList.remove("syncing");btn.innerHTML=`${iconRefresh}<span class="btn-label">Refresh Index</span>`;zone.classList.remove("syncing");document.getElementById("syncStatus").textContent="Folder and document index refreshed.";document.getElementById("driveTimestamp").textContent=`Cloud Folder Index Refreshed: ${now()}`;renderDrivePanel();toast("Cloud folder index refresh simulated. Document list updated.")},1450)});
     document.getElementById("simulateApproval").addEventListener("click",()=>{toast("Human review gate simulated: recommendation remains advisory until authority confirms action.");document.getElementById("govAudit").textContent+=" - human review gate simulated in mockup"});
     renderProjects();renderDetail(selected);renderDrivePanel();renderGovernance(selected);renderDefinitions();annotateTerms(document.querySelector("main"));
+
+    function renderRadarChart(project) {
+      var canvas = document.getElementById('moduleRadarChart');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      var w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      var cpi = Number(project.cpi) || 1;
+      var spi = Number(project.spi) || 1;
+      var risk = Number(project.posteriorRisk || project.posterior) || 0;
+      var cusum = Number(project.cusum) || 0;
+      var rfis = Number(project.flaggedRfis || project.rfis) || 0;
+
+      var evmScore = Math.min(1, Math.max(0, ((cpi + spi) / 2 - 0.7) / 0.5));
+      var bayesScore = Math.min(1, Math.max(0, 1 - risk));
+      var anomalyScore = Math.min(1, Math.max(0, 1 - (cusum / 10)));
+      var docScore = Math.min(1, Math.max(0, 1 - (rfis / 20)));
+
+      var scores = [evmScore, bayesScore, anomalyScore, docScore];
+      var labels = ['EVM', 'Bayesian Risk', 'Anomaly', 'Doc Risk'];
+      var n = 4;
+      var cx = w / 2, cy = h / 2;
+      var maxR = Math.min(w, h) / 2 - 40;
+      var angleStep = (Math.PI * 2) / n;
+      var startAngle = -Math.PI / 2;
+
+      var rings = [0.25, 0.5, 0.75, 1.0];
+      for (var r = 0; r < rings.length; r++) {
+        ctx.beginPath();
+        for (var i = 0; i < n; i++) {
+          var angle = startAngle + i * angleStep;
+          var x = cx + Math.cos(angle) * maxR * rings[r];
+          var y = cy + Math.sin(angle) * maxR * rings[r];
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(0,229,255,0.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      for (var i = 0; i < n; i++) {
+        var angle = startAngle + i * angleStep;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+        ctx.strokeStyle = 'rgba(0,229,255,0.18)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      var avg = (evmScore + bayesScore + anomalyScore + docScore) / 4;
+      var fillColor = avg >= 0.7 ? 'rgba(34,197,94,0.25)' :
+        avg >= 0.45 ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)';
+      var strokeColor = avg >= 0.7 ? 'rgba(34,197,94,0.9)' :
+        avg >= 0.45 ? 'rgba(245,158,11,0.9)' : 'rgba(239,68,68,0.9)';
+
+      ctx.beginPath();
+      for (var i = 0; i < n; i++) {
+        var angle = startAngle + i * angleStep;
+        var x = cx + Math.cos(angle) * maxR * scores[i];
+        var y = cy + Math.sin(angle) * maxR * scores[i];
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      for (var i = 0; i < n; i++) {
+        var angle = startAngle + i * angleStep;
+        var x = cx + Math.cos(angle) * maxR * scores[i];
+        var y = cy + Math.sin(angle) * maxR * scores[i];
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'center';
+      for (var i = 0; i < n; i++) {
+        var angle = startAngle + i * angleStep;
+        var lx = cx + Math.cos(angle) * (maxR + 22);
+        var ly = cy + Math.sin(angle) * (maxR + 22);
+        ctx.fillText(labels[i], lx, ly + 4);
+      }
+    }
 
     function renderPortfolioSummary(projects) {
       if (!projects || !projects.length) return;
