@@ -73,6 +73,30 @@ var LIN_ROSTER = [
   { code: 'SYN-CMB-012', projectName: 'Passenger Processing Hall Renewal', type: 'Combined', status: 'GREEN', health: 92, cpi: 1.03, spi: 1.00, bacM: 122.7, p50EacM: 119.126, p80EacM: 122.128, posteriorRisk: 0.21, cusum: 1.2, flaggedRfis: 1, conflicts: 0 }
 ];
 
+function doPost(e) {
+  var params = e && e.parameter ? e.parameter : {};
+  var action = String(params.action || '').toLowerCase();
+  var rootId = params.rootId || LIN_DEFAULT_ROOT_FOLDER_ID;
+
+  try {
+    var payload;
+    if (action === 'update') {
+      var body = {};
+      if (e && e.postData && e.postData.contents) {
+        try { body = JSON.parse(e.postData.contents); } catch (parseErr) {
+          return output_(errorPayload_('Invalid JSON body: ' + String(parseErr), 'update'), null);
+        }
+      }
+      payload = updateProject_(rootId, body);
+    } else {
+      payload = errorPayload_('Unknown POST action: ' + action, action);
+    }
+    return output_(payload, null);
+  } catch (err) {
+    return output_(errorPayload_(err && err.message ? err.message : String(err), action), null);
+  }
+}
+
 function doGet(e) {
   var params = e && e.parameter ? e.parameter : {};
   var action = String(params.action || 'health').toLowerCase();
@@ -134,7 +158,8 @@ function getHealth_(rootId) {
       '?action=portfolio',
       '?action=project&id=SYN-DES-001',
       '?action=audit&id=SYN-DES-001',
-      '?action=definitions'
+      '?action=definitions',
+      'POST ?action=update (body: projectCode, cpi, spi, bacM, p50EacM, p80EacM, posteriorRisk, cusum, flaggedRfis, conflicts, health, status)'
     ]
   });
 }
@@ -605,6 +630,60 @@ function putCacheSafely_(key, payload, seconds) {
   } catch (err) {
     // Cache is optional. Ignore cache errors.
   }
+}
+
+function updateProject_(rootId, body) {
+  var projectCode = String(body.projectCode || '').toUpperCase();
+  if (!projectCode) return errorPayload_('Missing projectCode in request body.', 'update');
+
+  var root = DriveApp.getFolderById(rootId);
+  var folderInfo = findProjectFolderByCode_(root, projectCode);
+  if (!folderInfo || !folderInfo.folder) {
+    return errorPayload_('Project folder not found for code: ' + projectCode, 'update');
+  }
+
+  var auditFolder = findNestedFolder_(folderInfo.folder, ['08_Audit_Trails']);
+  if (!auditFolder) {
+    return errorPayload_('08_Audit_Trails subfolder not found for: ' + projectCode, 'update');
+  }
+
+  var files = auditFolder.getFilesByName('calculation_trace.json');
+  if (!files.hasNext()) {
+    return errorPayload_('calculation_trace.json not found in 08_Audit_Trails for: ' + projectCode, 'update');
+  }
+  var file = files.next();
+
+  var existing = {};
+  try {
+    existing = JSON.parse(file.getBlob().getDataAsString());
+  } catch (parseErr) {
+    existing = {};
+  }
+
+  var ALLOWED_FIELDS = [
+    'projectCode', 'cpi', 'spi', 'bacM', 'p50EacM', 'p80EacM',
+    'posteriorRisk', 'cusum', 'flaggedRfis', 'conflicts', 'health', 'status'
+  ];
+
+  var updated = shallowClone_(existing);
+  for (var i = 0; i < ALLOWED_FIELDS.length; i++) {
+    var field = ALLOWED_FIELDS[i];
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      updated[field] = body[field];
+    }
+  }
+  updated._lastUpdated = new Date().toISOString();
+  updated._updatedBy = 'Lin-update-endpoint';
+
+  file.setContent(JSON.stringify(updated, null, 2));
+
+  return {
+    ok: true,
+    action: 'update',
+    updated: projectCode,
+    fileId: file.getId(),
+    timestamp: new Date().toISOString()
+  };
 }
 
 function output_(payload, callback) {
