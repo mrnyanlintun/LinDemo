@@ -159,6 +159,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
 
       <button class="nav-btn" data-page="definitions" title="Definitions"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M4 5h7a4 4 0 0 1 4 4v10H8a4 4 0 0 0-4 4V5Z"/><path d="M20 5h-5a4 4 0 0 0-4 4v10h5a4 4 0 0 1 4 4V5Z"/><path d="M8 9h3M8 13h3M15 9h2"/></svg></span><span class="btn-label">Lookup</span></button>
 
+      <button class="nav-btn" data-page="ingest" title="Ingest"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="btn-label">Ingest</span></button>
       <button id="themeToggle" class="nav-btn theme-toggle" type="button" aria-pressed="false" title="Switch to light theme"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><span class="btn-label">Light</span></button>
     </nav>
 
@@ -245,6 +246,30 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
             <div class="glossary-grid" id="glossaryGrid"></div>
           </div>
         </div>
+      </section>
+
+      <section id="ingest" class="page">
+        <div class="section-title"><div><div class="eyebrow" style="color:var(--buff);font:900 12px/1.25 var(--mono);text-transform:uppercase;letter-spacing:2.2px;margin-bottom:6px">06 Document Ingestion</div><h1 style="margin:0;font:850 34px/1.05 var(--sans);letter-spacing:-.045em">Signal Extraction Pipeline</h1></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0">
+          <div class="panel">
+            <div class="panel-head"><div><h3>Upload Document</h3><p>Select a project, document type, and file to extract signals.</p></div></div>
+            <div style="margin-bottom:12px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Project</label><select id="ingestProjectSelect" class="select-box" style="width:100%"><option value="">— select project —</option><option value="SYN-DES-001">SYN-DES-001</option><option value="SYN-DES-002">SYN-DES-002</option><option value="SYN-DES-003">SYN-DES-003</option><option value="SYN-DES-004">SYN-DES-004</option><option value="SYN-CON-005">SYN-CON-005</option><option value="SYN-CON-006">SYN-CON-006</option><option value="SYN-CON-007">SYN-CON-007</option><option value="SYN-CON-008">SYN-CON-008</option><option value="SYN-CMB-009">SYN-CMB-009</option><option value="SYN-CMB-010">SYN-CMB-010</option><option value="SYN-CMB-011">SYN-CMB-011</option><option value="SYN-CMB-012">SYN-CMB-012</option></select></div>
+            <div style="margin-bottom:16px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Document Type</label><select id="ingestDocType" class="select-box" style="width:100%"><option value="">— select type —</option><option value="meeting_minutes">Meeting Minutes</option><option value="pay_application">Pay Application</option><option value="rfi_log">RFI Log</option><option value="submittal">Submittal</option><option value="contract_spec">Contract Specification</option><option value="proposed_submission">Proposed Submission</option></select></div>
+            <input id="ingestFileInput" type="file" accept=".pdf,.txt,.csv" style="display:none">
+            <div id="ingestDropZone" style="border:2px dashed rgba(0,229,255,.45);background:rgba(0,229,255,.04);padding:40px;text-align:center;cursor:pointer;clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);margin-bottom:14px;transition:.16s ease"><div style="color:var(--cyan2);font:900 13px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Drag and drop file here</div><div style="color:var(--muted);font:800 11px/1.4 var(--mono)">PDF, TXT, CSV supported</div></div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="ingestUploadBtn" class="action-btn primary"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>Extract Signals</button><span id="ingestFileName" style="color:var(--muted);font:800 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.8px"></span></div>
+          </div>
+          <div class="panel" id="ingestResultPanel" style="display:none">
+            <div class="panel-head"><div><h3>Extracted Signals</h3></div><span id="ingestRiskBadge" class="badge">—</span></div>
+            <div id="ingestDocSummary" style="color:var(--faint);font-size:13px;line-height:1.5;margin-bottom:14px"></div>
+            <ul id="ingestKeyFindings" style="margin:0 0 14px;padding:0 0 0 16px;color:var(--faint);font-size:13px;line-height:1.65"></ul>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px"><div class="kpi"><b id="ingestCpiDelta">—</b><span>CPI Delta</span></div><div class="kpi"><b id="ingestSpiDelta">—</b><span>SPI Delta</span></div><div class="kpi"><b id="ingestHealthDelta">—</b><span>Health Delta</span></div><div class="kpi"><b id="ingestRfiDelta">—</b><span>RFI Delta</span></div></div>
+            <div id="ingestProposedValues" style="border:1px solid rgba(0,229,255,.20);background:rgba(0,229,255,.04);padding:12px;margin-bottom:14px;font:800 12px/1.6 var(--mono);color:var(--faint)"></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><button id="ingestApproveBtn" class="action-btn primary" style="border-color:rgba(54,255,154,.72);color:var(--green)"><span class="btn-icon" style="border-color:rgba(54,255,154,.58);color:var(--green)"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-5"/><circle cx="12" cy="12" r="9"/></svg></span>Approve Update</button><button id="ingestRejectBtn" class="action-btn"><span class="btn-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Reject</button></div>
+            <p style="margin:0;color:var(--muted);font:800 10px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px">Advisory only. Human authority confirmation required before approval writes to audit trail.</p>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Ingestion Log</h3></div></div><pre id="ingestLog" class="sync-log" style="min-height:80px;white-space:pre-wrap;word-break:break-all">Ingestion log ready. Select a project and document to begin.</pre></div>
       </section>
     </main>
 
@@ -434,5 +459,211 @@ ${constructionTree(p)}
   </script>
   <script src="config.js"></script>
   <script src="app.js"></script>
+  <script>
+  (function() {
+    var __ingestFile = null;
+    window.__ingestResult = null;
+
+    function ingestLogAppend(msg) {
+      var el = document.getElementById('ingestLog');
+      if (!el) return;
+      el.textContent += '\n' + new Date().toISOString().slice(11, 19) + ' | ' + msg;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function ingestLogSet(msg) {
+      var el = document.getElementById('ingestLog');
+      if (el) { el.textContent = new Date().toISOString().slice(11, 19) + ' | ' + msg; el.scrollTop = el.scrollHeight; }
+    }
+
+    function setFileName(name) {
+      var el = document.getElementById('ingestFileName');
+      if (el) el.textContent = name || '';
+    }
+
+    function colorDelta(id, val) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var num = Number(val);
+      if (isNaN(num)) { el.textContent = '—'; el.style.color = ''; return; }
+      el.textContent = (num >= 0 ? '+' : '') + num.toFixed(2);
+      el.style.color = num > 0 ? 'var(--green)' : num < 0 ? 'var(--red)' : 'var(--muted)';
+    }
+
+    function showResult(result) {
+      window.__ingestResult = result;
+      var panel = document.getElementById('ingestResultPanel');
+      if (panel) panel.style.display = '';
+
+      var badge = document.getElementById('ingestRiskBadge');
+      if (badge) {
+        var risk = String(result.riskLevel || 'UNKNOWN').toUpperCase();
+        badge.textContent = risk;
+        badge.className = 'badge status-' + risk.toLowerCase();
+      }
+
+      var summary = document.getElementById('ingestDocSummary');
+      if (summary) summary.textContent = result.summary || '';
+
+      var findings = document.getElementById('ingestKeyFindings');
+      if (findings) {
+        var items = Array.isArray(result.keyFindings) ? result.keyFindings : [];
+        findings.innerHTML = items.map(function(f) { return '<li>' + String(f) + '</li>'; }).join('');
+      }
+
+      colorDelta('ingestCpiDelta', result.cpiDelta);
+      colorDelta('ingestSpiDelta', result.spiDelta);
+      colorDelta('ingestHealthDelta', result.healthDelta);
+      colorDelta('ingestRfiDelta', result.rfiDelta);
+
+      var proposed = document.getElementById('ingestProposedValues');
+      if (proposed && result.proposedUpdate) {
+        var u = result.proposedUpdate;
+        proposed.innerHTML =
+          '<strong style="color:var(--cyan2)">Proposed update for ' + String(result.projectCode || '') + '</strong><br>' +
+          'CPI: ' + (u.cpi !== undefined ? u.cpi : '—') + ' &nbsp;&nbsp; ' +
+          'SPI: ' + (u.spi !== undefined ? u.spi : '—') + ' &nbsp;&nbsp; ' +
+          'Health: ' + (u.health !== undefined ? u.health : '—') + ' &nbsp;&nbsp; ' +
+          'Status: ' + (u.status !== undefined ? String(u.status) : '—');
+      }
+    }
+
+    function clearIngest() {
+      __ingestFile = null;
+      window.__ingestResult = null;
+      setFileName('');
+      var fi = document.getElementById('ingestFileInput');
+      if (fi) fi.value = '';
+      var panel = document.getElementById('ingestResultPanel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    function getApiUrl() {
+      return ((typeof LIN_CONFIG !== 'undefined' && LIN_CONFIG.appsScriptApiUrl) || '').trim();
+    }
+
+    function apiPost(action, body) {
+      var apiUrl = getApiUrl();
+      if (!apiUrl) return Promise.reject(new Error('Apps Script URL not configured in config.js.'));
+      var sep = apiUrl.includes('?') ? '&' : '?';
+      return fetch(apiUrl + sep + 'action=' + action, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.ok === false) throw new Error((data.error && data.error.message) || action + ' returned ok=false');
+        return data;
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var dropZone   = document.getElementById('ingestDropZone');
+      var fileInput  = document.getElementById('ingestFileInput');
+      var uploadBtn  = document.getElementById('ingestUploadBtn');
+      var approveBtn = document.getElementById('ingestApproveBtn');
+      var rejectBtn  = document.getElementById('ingestRejectBtn');
+
+      if (!dropZone) return;
+
+      dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--cyan)';
+        dropZone.style.boxShadow = '0 0 18px rgba(0,229,255,.22)';
+      });
+
+      dropZone.addEventListener('dragleave', function() {
+        dropZone.style.borderColor = 'rgba(0,229,255,.45)';
+        dropZone.style.boxShadow = '';
+      });
+
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = 'rgba(0,229,255,.45)';
+        dropZone.style.boxShadow = '';
+        var files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length) {
+          __ingestFile = files[0];
+          setFileName(__ingestFile.name);
+          ingestLogAppend('File staged: ' + __ingestFile.name);
+        }
+      });
+
+      dropZone.addEventListener('click', function() { if (fileInput) fileInput.click(); });
+
+      if (fileInput) {
+        fileInput.addEventListener('change', function() {
+          if (fileInput.files && fileInput.files.length) {
+            __ingestFile = fileInput.files[0];
+            setFileName(__ingestFile.name);
+            ingestLogAppend('File staged: ' + __ingestFile.name);
+          }
+        });
+      }
+
+      if (uploadBtn) {
+        uploadBtn.addEventListener('click', function() {
+          var projectCode = document.getElementById('ingestProjectSelect').value;
+          var docType     = document.getElementById('ingestDocType').value;
+          if (!projectCode) { ingestLogAppend('ERROR: Select a project before extracting.'); return; }
+          if (!docType)     { ingestLogAppend('ERROR: Select a document type before extracting.'); return; }
+          if (!__ingestFile){ ingestLogAppend('ERROR: Select or drop a file before extracting.'); return; }
+          if (!getApiUrl()) { ingestLogAppend('ERROR: Apps Script URL not configured in config.js.'); return; }
+
+          ingestLogSet('Extracting signals from ' + __ingestFile.name + '…');
+
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            var dataUrl = ev.target.result;
+            var base64  = dataUrl.indexOf(',') >= 0 ? dataUrl.split(',')[1] : dataUrl;
+            apiPost('ingest', {
+              projectCode:   projectCode,
+              documentType:  docType,
+              fileName:      __ingestFile.name,
+              fileBase64:    base64,
+              fileMimeType:  __ingestFile.type || 'application/octet-stream'
+            })
+            .then(function(data) {
+              ingestLogAppend('Extraction complete. Risk level: ' + (data.riskLevel || 'UNKNOWN'));
+              showResult(data);
+            })
+            .catch(function(err) { ingestLogAppend('ERROR: ' + (err.message || String(err))); });
+          };
+          reader.onerror = function() { ingestLogAppend('ERROR: Failed to read file.'); };
+          reader.readAsDataURL(__ingestFile);
+        });
+      }
+
+      if (approveBtn) {
+        approveBtn.addEventListener('click', function() {
+          var result = window.__ingestResult;
+          if (!result) { ingestLogAppend('ERROR: No extraction result to approve.'); return; }
+          ingestLogAppend('Submitting approval…');
+          apiPost('approve', {
+            projectCode:    result.projectCode,
+            proposedUpdate: result.proposedUpdate,
+            sourceFileName: result.sourceFileName || (__ingestFile && __ingestFile.name) || '',
+            approvedBy:     'HUD user'
+          })
+          .then(function(data) {
+            ingestLogAppend('Approved and written to audit trail. Project: ' + (data.updated || result.projectCode));
+            clearIngest();
+          })
+          .catch(function(err) { ingestLogAppend('ERROR: ' + (err.message || String(err))); });
+        });
+      }
+
+      if (rejectBtn) {
+        rejectBtn.addEventListener('click', function() {
+          clearIngest();
+          ingestLogAppend('Update rejected by user.');
+        });
+      }
+    });
+  })();
+  </script>
 </body>
 </html>
