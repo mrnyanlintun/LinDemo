@@ -172,6 +172,23 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
         <div class="filter-row"><button class="mini-btn active" data-filter="ALL">All</button><button class="mini-btn" data-filter="GREEN">Green</button><button class="mini-btn" data-filter="AMBER">Amber</button><button class="mini-btn" data-filter="RED">Red</button><button id="notificationToggle" class="mini-btn notification-toggle" type="button" aria-pressed="true" title="Toggle red notification flash"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M10 21h4"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M12 3V1"/></svg></span><span class="btn-label">Notification On</span></button></div><div class="filter-row type-filter-row"><button class="mini-btn active" data-type-filter="ALL">All Types</button><button class="mini-btn" data-type-filter="DESIGN">Design</button><button class="mini-btn" data-type-filter="CONSTRUCTION">Construction</button><button class="mini-btn" data-type-filter="COMBINED">Combined</button></div>
         <div class="status-legend" aria-label="Status color legend"><span class="status-key" style="--legend-color:var(--green)"><i></i>Green: normal watch</span><span class="status-key" style="--legend-color:var(--amber)"><i></i>Amber: attention required</span><span class="status-key" style="--legend-color:var(--red)"><i></i>Red: urgent escalation</span></div>
         <div class="portfolio-grid" id="projectGrid"></div>
+        <div class="panel" id="portfolioSummaryTable" style="margin-top:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <p class="eyebrow" style="margin:0">Portfolio Summary</p>
+            <span class="sync-pill" id="summarySyncPill">Loading...</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;" id="summaryKpiGrid"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+            <div>
+              <p class="eyebrow" style="margin:0 0 10px">Top Risk Projects</p>
+              <div id="summaryTopRisk"></div>
+            </div>
+            <div>
+              <p class="eyebrow" style="margin:0 0 10px">Most Stable Projects</p>
+              <div id="summaryTopStable"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="detail" class="page">
@@ -321,7 +338,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
     function badge(status){return `<span class="badge status-${cls(status)}">${status}</span>`} function pill(label,status){return `<span class="signal-pill status-${cls(status)}"><i></i>${label}: ${status}</span>`}
     function typeClass(k){return "type-"+String(k||"combined").toLowerCase()} function projectCard(p,i){const c=colorFor[p.cls];return `<article class="project-card ${p.cls}-project ${p.code===selected.code?"selected":""}" data-open-code="${p.code}" style="--i:${i}"><div class="project-top"><div><h3>${p.title}</h3><small>${p.code} // ${p.agency}</small><span class="type-tag ${typeClass(p.kind)}">${p.kind}</span></div>${badge(p.status)}</div><div class="gauge-row"><div class="gauge small-gauge ${p.cls==="red"?"red-alert":""}" data-pct="${p.health}" style="--pct:0;--gcolor:${c};color:${c}"><span class="ring"></span><div class="value"><b data-count="${p.health}">0</b><span>Health</span></div></div><div class="mini-metrics"><div class="metric-line"><span>CPI</span><div class="bar"><span style="--w:${pct(p.cpi)}%;--bar-color:${c}"></span></div><span>${p.cpi.toFixed(2)}</span></div><div class="metric-line"><span>SPI</span><div class="bar"><span style="--w:${pct(p.spi)}%;--bar-color:${c}"></span></div><span>${p.spi.toFixed(2)}</span></div><div class="metric-line"><span>P80</span><div class="bar"><span style="--w:${Math.max(28,100-p.health)}%;--bar-color:${c}"></span></div><span>$${p.p80.toFixed(1)}M</span></div></div></div><p>${p.desc}</p><div class="cycle-grid"><div class="cycle-cell"><b>${p.cycle}</b><span>Reporting Cycle</span></div><div class="cycle-cell"><b>${Math.round(p.posterior*100)}%</b><span>Posterior Risk</span></div><div class="cycle-cell"><b>${p.cusum.toFixed(2)}</b><span>CUSUM Drift</span></div><div class="cycle-cell"><b>${p.kind}</b><span>Folder Type</span></div></div><div class="signal-dots">${pill("EVM",p.evmSignal)}${pill("ANOM",p.anomalySignal)}${pill("DOCS",p.docSignal)}</div><div class="card-footer"><div><b>${p.rfis}</b><span>Flagged RFIs</span></div><div><b>${p.conflicts}</b><span>Conflicts</span></div><div><b>${p.records}</b><span>Records</span></div></div></article>`}
     function filteredProjects(){const q=document.getElementById("searchBox").value.trim().toLowerCase();let list=projects.filter(p=>(activeFilter==="ALL"||p.status===activeFilter)&&(activeTypeFilter==="ALL"||p.kind===activeTypeFilter));if(q)list=list.filter(p=>[p.title,p.code,p.agency,p.status,p.folder,p.kind].join(" ").toLowerCase().includes(q));const sort=document.getElementById("sortBox").value;list=[...list].sort((a,b)=>sort==="risk"?severityRank[b.status]-severityRank[a.status]||a.health-b.health:sort==="health"?b.health-a.health:sort==="eac"?b.p80-a.p80:a.title.localeCompare(b.title));return list}
-    function renderProjects(){const grid=document.getElementById("projectGrid");grid.innerHTML=filteredProjects().map(projectCard).join("");grid.querySelectorAll("[data-open-code]").forEach(card=>card.addEventListener("click",()=>openProject(card.dataset.openCode)));grid.querySelectorAll(".small-gauge").forEach(g=>animateGauge(g,Number(g.dataset.pct),g.querySelector("[data-count]"),Number(g.dataset.pct)))}
+    function renderProjects(){const grid=document.getElementById("projectGrid");grid.innerHTML=filteredProjects().map(projectCard).join("");grid.querySelectorAll("[data-open-code]").forEach(card=>card.addEventListener("click",()=>openProject(card.dataset.openCode)));grid.querySelectorAll(".small-gauge").forEach(g=>animateGauge(g,Number(g.dataset.pct),g.querySelector("[data-count]"),Number(g.dataset.pct)));renderPortfolioSummary(projects);}
     function lineChart(type,p){const c=p.cls==="red"?"#ff4f5f":p.cls==="amber"?"#ffcb45":"#36ff9a";if(type==="forecast"){const p50=p.cls==="green"?310:p.cls==="amber"?365:430,p80=p.cls==="green"?390:p.cls==="amber"?455:505;return `<svg viewBox="0 0 600 190" preserveAspectRatio="none"><defs><linearGradient id="distGrad${p.code.replace(/\W/g,'')}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#00e5ff" stop-opacity=".42"/><stop offset="1" stop-color="#00e5ff" stop-opacity=".02"/></linearGradient></defs><path d="M0,150 C60,145 88,136 128,120 C164,106 190,80 232,75 C270,70 294,92 326,92 C365,92 382,60 420,54 C460,48 498,70 536,92 C562,108 582,125 600,136 L600,190 L0,190 Z" fill="url(#distGrad${p.code.replace(/\W/g,'')})"/><path class="animated-path" d="M0,150 C60,145 88,136 128,120 C164,106 190,80 232,75 C270,70 294,92 326,92 C365,92 382,60 420,54 C460,48 498,70 536,92 C562,108 582,125 600,136" fill="none" stroke="#00e5ff" stroke-width="3"/><line class="trigger-line ${p.status==="RED"?"alert-text":""}" x1="${p80}" y1="20" x2="${p80}" y2="170" stroke="${c}" stroke-width="2" stroke-dasharray="7 7"/><text x="${p80+8}" y="34" fill="${c}" font-size="14" font-family="monospace">P80 $${p.p80.toFixed(1)}M</text><line x1="${p50}" y1="20" x2="${p50}" y2="170" stroke="#ffcb45" stroke-width="2" stroke-dasharray="7 7"/><text x="${p50+8}" y="54" fill="#ffcb45" font-size="14" font-family="monospace">P50</text></svg>`} const y1=p.cls==="red"?"60 70 82 96 112 130 140 150 158":p.cls==="amber"?"62 66 76 82 88 96 104 116 126":"80 76 74 72 69 70 68 66 64",y2=p.cls==="red"?"72 76 82 90 96 104 118 128 142":p.cls==="amber"?"74 78 84 90 94 102 112 124 132":"84 82 80 78 77 76 75 74 72";const pts1=y1.split(" ").map((y,i)=>`${i*75},${y}`).join(" "),pts2=y2.split(" ").map((y,i)=>`${i*75},${y}`).join(" ");return `<svg viewBox="0 0 600 190" preserveAspectRatio="none"><polyline class="animated-path" points="${pts1}" fill="none" stroke="${c}" stroke-width="3"/><polyline class="animated-path" points="${pts2}" fill="none" stroke="#00e5ff" stroke-width="2" opacity=".75"/><line x1="0" y1="102" x2="600" y2="102" stroke="#ffcb45" stroke-width="2" stroke-dasharray="8 7"/>${p.status!=="GREEN"?'<circle class="alert-dot" cx="450" cy="134" r="7" fill="#ff4f5f"/><circle class="alert-dot" cx="525" cy="148" r="7" fill="#ff4f5f"/><text class="alert-text" x="390" y="40" fill="#ff4f5f" font-size="14" font-family="monospace">RULE BREAK</text>':'<text x="396" y="40" fill="#36ff9a" font-size="14" font-family="monospace">WITHIN CONTROL</text>'}</svg>`}
     function openProject(code){selected=projects.find(p=>p.code===code)||selected;renderDetail(selected);renderProjects();renderDrivePanel();renderGovernance(selected);showPage("detail");toast(`Loaded ${selected.code} deep dive.`)}
     function bayesSignal(p){return p.posterior>=.65?"RED":p.posterior>=.35?"AMBER":"GREEN"}
@@ -482,6 +499,66 @@ ${constructionTree(p)}
     document.getElementById("refreshDrive").addEventListener("click",e=>{const btn=e.currentTarget,zone=document.getElementById("syncZone"),log=document.getElementById("syncLog");btn.classList.add("syncing");btn.innerHTML=`${iconRefresh}<span class="btn-label">Scanning</span>`;zone.classList.add("syncing");document.getElementById("syncStatus").textContent="Scanning shared synthetic cloud folder index...";log.textContent=`[${now()}] Connecting to cloud folder index...`;setTimeout(()=>{log.textContent+=`\n[${now()}] Detected ${projects.length} project folders across design, construction, and combined archetypes; ${projects.reduce((a,p)=>a+getProjectManifest(p).length,0)} staged files.`},650);setTimeout(()=>{log.textContent+=`\n[${now()}] Selected folder refreshed: ${selected.folder}`},1100);setTimeout(()=>{btn.classList.remove("syncing");btn.innerHTML=`${iconRefresh}<span class="btn-label">Refresh Index</span>`;zone.classList.remove("syncing");document.getElementById("syncStatus").textContent="Folder and document index refreshed.";document.getElementById("driveTimestamp").textContent=`Cloud Folder Index Refreshed: ${now()}`;renderDrivePanel();toast("Cloud folder index refresh simulated. Document list updated.")},1450)});
     document.getElementById("simulateApproval").addEventListener("click",()=>{toast("Human review gate simulated: recommendation remains advisory until authority confirms action.");document.getElementById("govAudit").textContent+=" - human review gate simulated in mockup"});
     renderProjects();renderDetail(selected);renderDrivePanel();renderGovernance(selected);renderDefinitions();annotateTerms(document.querySelector("main"));
+
+    function renderPortfolioSummary(projects) {
+      if (!projects || !projects.length) return;
+      var totalBac = 0, totalP50 = 0, totalP80 = 0, totalHealth = 0;
+      var green = 0, amber = 0, red = 0, pending = 0;
+      for (var i = 0; i < projects.length; i++) {
+        var p = projects[i];
+        totalBac += Number(p.bacM || p.bac) || 0;
+        totalP50 += Number(p.p50EacM || p.eac) || 0;
+        totalP80 += Number(p.p80EacM || p.p80) || 0;
+        totalHealth += Number(p.health) || 0;
+        var s = (p.status || '').toUpperCase();
+        if (s === 'GREEN') green++;
+        else if (s === 'AMBER') amber++;
+        else if (s === 'RED') red++;
+        else pending++;
+      }
+      var avgHealth = Math.round(totalHealth / projects.length);
+      var p80Exposure = Math.round((totalP80 - totalBac) * 10) / 10;
+      var kpis = [
+        { label: 'Total BAC', value: '$' + totalBac.toFixed(1) + 'M' },
+        { label: 'Total P50 EAC', value: '$' + totalP50.toFixed(1) + 'M' },
+        { label: 'Total P80 EAC', value: '$' + totalP80.toFixed(1) + 'M' },
+        { label: 'P80 Exposure', value: '+$' + p80Exposure.toFixed(1) + 'M',
+          color: p80Exposure > 0 ? '#ef4444' : '#22c55e' },
+        { label: 'Avg Health', value: avgHealth + '%',
+          color: avgHealth >= 80 ? '#22c55e' : avgHealth >= 50 ? '#f59e0b' : '#ef4444' },
+        { label: 'GREEN', value: green, color: '#22c55e' },
+        { label: 'AMBER', value: amber, color: '#f59e0b' },
+        { label: 'RED', value: red, color: '#ef4444' }
+      ];
+      var grid = document.getElementById('summaryKpiGrid');
+      if (!grid) return;
+      grid.innerHTML = kpis.map(function(k) {
+        return '<div style="background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.12);' +
+          'padding:14px;clip-path:polygon(0 8px,8px 0,100% 0,100% calc(100% - 8px),' +
+          'calc(100% - 8px) 100%,0 100%)">' +
+          '<p style="margin:0 0 4px;font-size:0.7rem;letter-spacing:0.08em;color:#94a3b8">' +
+          k.label + '</p>' +
+          '<p style="margin:0;font-size:1.3rem;font-weight:700;color:' +
+          (k.color || '#00e5ff') + '">' + k.value + '</p></div>';
+      }).join('');
+      var sorted = projects.slice().sort(function(a, b) {
+        return (Number(b.posteriorRisk || b.posterior) || 0) - (Number(a.posteriorRisk || a.posterior) || 0);
+      });
+      var topRisk = sorted.slice(0, 3);
+      var topStable = sorted.slice().reverse().slice(0, 3);
+      function projectRow(p) {
+        var s = (p.status || 'GREEN').toUpperCase();
+        var c = s === 'RED' ? '#ef4444' : s === 'AMBER' ? '#f59e0b' : '#22c55e';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;' +
+          'padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
+          '<span style="font-size:0.8rem;color:#e2e8f0">' + p.code + ' ' + (p.projectName || p.title || '') + '</span>' +
+          '<span style="font-size:0.75rem;font-weight:700;color:' + c + '">' + s + '</span></div>';
+      }
+      document.getElementById('summaryTopRisk').innerHTML = topRisk.map(projectRow).join('');
+      document.getElementById('summaryTopStable').innerHTML = topStable.map(projectRow).join('');
+      var pill = document.getElementById('summarySyncPill');
+      if (pill) pill.textContent = projects.length + ' projects loaded';
+    }
   </script>
   <script src="config.js"></script>
   <script src="app.js"></script>
