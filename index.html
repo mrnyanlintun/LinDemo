@@ -160,6 +160,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
       <button class="nav-btn" data-page="definitions" title="Definitions"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M4 5h7a4 4 0 0 1 4 4v10H8a4 4 0 0 0-4 4V5Z"/><path d="M20 5h-5a4 4 0 0 0-4 4v10h5a4 4 0 0 1 4 4V5Z"/><path d="M8 9h3M8 13h3M15 9h2"/></svg></span><span class="btn-label">Lookup</span></button>
 
       <button class="nav-btn" data-page="ingest" title="Ingest"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="btn-label">Ingest</span></button>
+      <button class="nav-btn" data-page="projects"><span>07</span> Projects</button>
       <button id="themeToggle" class="nav-btn theme-toggle" type="button" aria-pressed="false" title="Switch to light theme"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><span class="btn-label">Light</span></button>
     </nav>
 
@@ -270,6 +271,40 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
           </div>
         </div>
         <div class="panel"><div class="panel-head"><div><h3>Ingestion Log</h3></div></div><pre id="ingestLog" class="sync-log" style="min-height:80px;white-space:pre-wrap;word-break:break-all">Ingestion log ready. Select a project and document to begin.</pre></div>
+      </section>
+
+      <section id="projects" class="page">
+        <div class="section-title"><div><div class="eyebrow" style="color:var(--buff);font:900 12px/1.25 var(--mono);text-transform:uppercase;letter-spacing:2.2px;margin-bottom:6px">07 Project Management</div><h1 style="margin:0;font:850 34px/1.05 var(--sans);letter-spacing:-.045em">Create and Archive Projects</h1></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0">
+          <div class="panel">
+            <div class="panel-head"><div><h3>Create New Project</h3><p>Define project parameters and create a new project folder in the cloud drive.</p></div></div>
+            <div style="margin-bottom:12px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Project Name</label><input id="newProjectName" type="text" class="search-box" style="width:100%" placeholder="e.g. Terminal Expansion Phase 2"></div>
+            <div style="margin-bottom:12px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Project Type</label><select id="newProjectType" class="select-box" style="width:100%"><option value="">— select type —</option><option value="Design">Design</option><option value="Construction">Construction</option><option value="Combined">Combined</option></select></div>
+            <div style="margin-bottom:12px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">BAC ($ millions)</label><input id="newProjectBac" type="number" class="search-box" style="width:100%" step="0.1" min="0" placeholder="0.0"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">CPI</label><input id="newProjectCpi" type="number" class="search-box" style="width:100%" step="0.01" min="0.5" max="1.5" value="1.00"></div>
+              <div><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">SPI</label><input id="newProjectSpi" type="number" class="search-box" style="width:100%" step="0.01" min="0.5" max="1.5" value="1.00"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Health Score (0–100)</label><input id="newProjectHealth" type="number" class="search-box" style="width:100%" min="0" max="100" value="80"></div>
+              <div><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Posterior Risk (0–1)</label><input id="newProjectRisk" type="number" class="search-box" style="width:100%" step="0.01" min="0" max="1" value="0.20"></div>
+            </div>
+            <div style="margin-bottom:16px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Flagged RFIs</label><input id="newProjectRfis" type="number" class="search-box" style="width:100%" min="0" value="0"></div>
+            <div id="newProjectPreview" style="border:1px solid rgba(0,229,255,.20);background:rgba(0,229,255,.04);padding:12px;margin-bottom:14px;font:800 12px/1.7 var(--mono);color:var(--faint)">Code will be: <span id="previewCode">SYN-???-???</span><br>Status will be: <span id="previewStatus">GREEN</span></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button id="newProjectSubmitBtn" class="action-btn primary"><span class="btn-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>Create Project</button>
+              <span id="newProjectStatus" style="color:var(--muted);font:800 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.8px"></span>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><h3>Active Projects</h3><p>Current portfolio. Use Archive to move a project to the 00_Archive folder.</p></div><button id="refreshProjectsList" class="mini-btn">Refresh</button></div>
+            <div id="activeProjectsList" style="display:grid;gap:9px;max-height:520px;overflow-y:auto"></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:0">
+          <div class="panel-head"><div><h3>Project Management Log</h3></div></div>
+          <pre id="projectsLog" class="sync-log" style="min-height:80px;white-space:pre-wrap;word-break:break-all">Project management log ready.</pre>
+        </div>
       </section>
     </main>
 
@@ -662,6 +697,209 @@ ${constructionTree(p)}
           ingestLogAppend('Update rejected by user.');
         });
       }
+    });
+  })();
+  </script>
+  <script>
+  (function() {
+    window.__projectsList = [];
+
+    function projectsLogAppend(msg) {
+      var el = document.getElementById('projectsLog');
+      if (!el) return;
+      var ts = new Date().toLocaleTimeString();
+      el.textContent = '[' + ts + '] ' + msg + '\n' + el.textContent;
+    }
+
+    function getApiUrl() {
+      return ((typeof LIN_CONFIG !== 'undefined' && LIN_CONFIG.appsScriptApiUrl) || '').trim();
+    }
+
+    function apiPost(action, body) {
+      var url = getApiUrl();
+      if (!url) return Promise.reject(new Error('API URL not configured'));
+      var fullUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=' + action;
+      return fetch(fullUrl, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        if (data && data.ok === false) throw new Error((data.error && data.error.message) || data.error || action + ' returned ok=false');
+        return data;
+      });
+    }
+
+    function apiFetch(action) {
+      var url = getApiUrl();
+      if (!url) return Promise.reject(new Error('API URL not configured'));
+      var fullUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=' + action + '&_=' + Date.now();
+      return fetch(fullUrl, { method: 'GET', mode: 'cors', cache: 'no-store' })
+        .then(function(r) { return r.json(); });
+    }
+
+    function statusBadgeHTML(status) {
+      var s = String(status || 'GREEN').toUpperCase();
+      var cls = s === 'RED' ? 'status-red' : s === 'AMBER' ? 'status-amber' : 'status-green';
+      return '<span class="badge ' + cls + '" style="font-size:9px;padding:4px 7px">' + s + '</span>';
+    }
+
+    function renderActiveProjects(list) {
+      var el = document.getElementById('activeProjectsList');
+      if (!el) return;
+      if (!list || !list.length) {
+        el.innerHTML = '<div style="color:var(--muted);font:800 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px;padding:12px">No projects loaded. Click Refresh.</div>';
+        return;
+      }
+      el.innerHTML = list.map(function(p) {
+        var isArchived = p.__archived;
+        var badgeHtml = isArchived
+          ? '<span class="badge" style="font-size:9px;padding:4px 7px;opacity:.6">ARCHIVED</span>'
+          : statusBadgeHTML(p.status);
+        var archiveBtn = isArchived
+          ? ''
+          : '<button class="mini-btn" data-archive-code="' + (p.code || '') + '" style="font-size:9px;padding:5px 8px;min-width:0">Archive</button>';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(0,229,255,.16);background:rgba(0,0,0,.18);opacity:' + (isArchived ? '0.5' : '1') + '">'
+          + '<div style="font:800 11px/1.45 var(--mono)">'
+          + '<span style="color:var(--cyan2)">' + (p.code || '—') + '</span>'
+          + '<span style="color:var(--muted);margin-left:8px">' + (p.projectName || p.title || '—') + '</span>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' + badgeHtml + archiveBtn + '</div>'
+          + '</div>';
+      }).join('');
+      el.querySelectorAll('[data-archive-code]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          archiveProject(btn.getAttribute('data-archive-code'));
+        });
+      });
+    }
+
+    function loadActiveProjects() {
+      projectsLogAppend('Loading portfolio...');
+      apiFetch('portfolio')
+        .then(function(data) {
+          var list = (data && data.data && data.data.projects) || [];
+          window.__projectsList = list;
+          renderActiveProjects(list);
+          projectsLogAppend('Portfolio loaded: ' + list.length + ' projects.');
+        })
+        .catch(function(err) {
+          var fallback = window.projects || [];
+          window.__projectsList = fallback.map(function(p) {
+            return { code: p.code, projectName: p.title, status: p.status };
+          });
+          renderActiveProjects(window.__projectsList);
+          projectsLogAppend('Live fetch failed, showing local data. (' + (err.message || String(err)) + ')');
+        });
+    }
+
+    function archiveProject(code) {
+      projectsLogAppend('Archiving ' + code + '...');
+      apiPost('archiveproject', { projectCode: code, reason: 'Archived via Lin HUD' })
+        .then(function(data) {
+          projectsLogAppend(code + ' archived successfully.');
+          var list = window.__projectsList;
+          for (var i = 0; i < list.length; i++) {
+            if (list[i].code === code) { list[i].__archived = true; break; }
+          }
+          renderActiveProjects(list);
+        })
+        .catch(function(err) {
+          projectsLogAppend('ERROR archiving ' + code + ': ' + (err.message || String(err)));
+        });
+    }
+
+    function derivePreview() {
+      var type = (document.getElementById('newProjectType') || {}).value || '';
+      var health = parseInt((document.getElementById('newProjectHealth') || {}).value || '80', 10);
+      var tokenMap = { Design: 'DES', Construction: 'CON', Combined: 'CMB' };
+      var token = tokenMap[type] || '???';
+      var codePreview = type ? 'SYN-' + token + '-???' : 'SYN-???-???';
+      var statusPreview = health >= 80 ? 'GREEN' : health >= 50 ? 'AMBER' : 'RED';
+      var codeEl = document.getElementById('previewCode');
+      var statusEl = document.getElementById('previewStatus');
+      if (codeEl) codeEl.textContent = codePreview;
+      if (statusEl) {
+        statusEl.textContent = statusPreview;
+        statusEl.style.color = statusPreview === 'GREEN' ? 'var(--green)' : statusPreview === 'AMBER' ? 'var(--amber)' : 'var(--red)';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var typeEl    = document.getElementById('newProjectType');
+      var healthEl  = document.getElementById('newProjectHealth');
+      var submitBtn = document.getElementById('newProjectSubmitBtn');
+      var refreshBtn = document.getElementById('refreshProjectsList');
+
+      if (typeEl)   typeEl.addEventListener('change', derivePreview);
+      if (healthEl) healthEl.addEventListener('input',  derivePreview);
+
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() { loadActiveProjects(); });
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+          var name     = (document.getElementById('newProjectName')   || {}).value || '';
+          var type     = (document.getElementById('newProjectType')   || {}).value || '';
+          var bac      = parseFloat((document.getElementById('newProjectBac')    || {}).value || '0');
+          var cpi      = parseFloat((document.getElementById('newProjectCpi')    || {}).value || '1');
+          var spi      = parseFloat((document.getElementById('newProjectSpi')    || {}).value || '1');
+          var health   = parseInt((document.getElementById('newProjectHealth')  || {}).value || '80', 10);
+          var risk     = parseFloat((document.getElementById('newProjectRisk')   || {}).value || '0.20');
+          var rfis     = parseInt((document.getElementById('newProjectRfis')    || {}).value || '0', 10);
+          var statusEl = document.getElementById('newProjectStatus');
+
+          if (!name.trim()) { if (statusEl) statusEl.textContent = 'Project name is required.'; return; }
+          if (!type)        { if (statusEl) statusEl.textContent = 'Project type is required.';  return; }
+          if (statusEl) statusEl.textContent = 'Creating...';
+
+          apiPost('createproject', {
+            projectName:   name.trim(),
+            projectType:   type,
+            bacM:          bac,
+            cpi:           cpi,
+            spi:           spi,
+            health:        health,
+            posteriorRisk: risk,
+            flaggedRfis:   rfis,
+            conflicts:     0
+          })
+          .then(function(data) {
+            var code = (data && data.code) || '—';
+            var pname = (data && data.projectName) || name;
+            if (statusEl) statusEl.textContent = 'Created: ' + code;
+            projectsLogAppend('Created: ' + code + ' — ' + pname);
+            document.getElementById('newProjectName').value  = '';
+            document.getElementById('newProjectType').value  = '';
+            document.getElementById('newProjectBac').value   = '';
+            document.getElementById('newProjectCpi').value   = '1.00';
+            document.getElementById('newProjectSpi').value   = '1.00';
+            document.getElementById('newProjectHealth').value = '80';
+            document.getElementById('newProjectRisk').value  = '0.20';
+            document.getElementById('newProjectRfis').value  = '0';
+            derivePreview();
+            loadActiveProjects();
+          })
+          .catch(function(err) {
+            if (statusEl) statusEl.textContent = 'ERROR: ' + (err.message || String(err));
+            projectsLogAppend('ERROR creating project: ' + (err.message || String(err)));
+          });
+        });
+      }
+
+      // Load projects when switching to the projects page
+      var origShowPage = window.showPage;
+      window.showPage = function(page) {
+        if (typeof origShowPage === 'function') origShowPage(page);
+        if (page === 'projects') loadActiveProjects();
+      };
     });
   })();
   </script>
