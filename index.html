@@ -175,7 +175,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
       </section>
 
       <section id="detail" class="page">
-        <div class="detail-hero"><div class="panel hero-gauge"><div id="heroGauge" class="gauge" style="--pct:0;--gcolor:var(--red);color:var(--red)"><span class="ring"></span><div class="value"><b id="heroState">RED</b><span>Lin State</span></div></div></div><div class="panel hero-text"><div class="breadcrumbs"><a class="back-link" data-page="portfolio">Portfolio</a> / <span id="detailCode">LIN-CHS-002</span> / Deep Dive</div><h2 id="detailTitle">CHS Terminal MEP Fit-Out & Commissioning</h2><p id="detailNarrative"></p><div class="signal-dots" id="detailSignals"></div><div class="kpi-strip" id="detailKpis"></div><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button id="runSynthesis" class="action-btn primary" title="Synthesize"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12l8-6M8 12l8 6"/></svg></span><span class="btn-label">Synthesize</span></button><button class="action-btn" data-page="governance" title="Decision Card"><span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="btn-label">Decision</span></button></div></div></div>
+        <div class="detail-hero"><div class="panel hero-gauge"><div id="heroGauge" class="gauge" style="--pct:0;--gcolor:var(--red);color:var(--red)"><span class="ring"></span><div class="value"><b id="heroState">RED</b><span>Lin State</span></div></div></div><div class="panel hero-text"><div class="breadcrumbs"><a class="back-link" data-page="portfolio">Portfolio</a> / <span id="detailCode">LIN-CHS-002</span> / Deep Dive</div><h2 id="detailTitle">CHS Terminal MEP Fit-Out & Commissioning</h2><p id="detailNarrative"></p><div class="signal-dots" id="detailSignals"></div><div class="kpi-strip" id="detailKpis"></div><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button id="runSynthesis" class="action-btn primary" title="Synthesize"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12l8-6M8 12l8 6"/></svg></span><span class="btn-label">Synthesize</span></button><button class="action-btn" data-page="governance" title="Decision Card"><span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="btn-label">Decision</span></button><button id="archiveProjectBtn" class="action-btn" title="Archive this project" style="border-color:rgba(255,203,69,.52);color:var(--amber)"><span class="btn-icon" style="border-color:rgba(255,203,69,.45);color:var(--amber)"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></span><span class="btn-label">Archive</span></button></div><div id="archiveConfirmBar" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(255,203,69,.40);background:rgba(255,203,69,.06);font:800 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--amber);display:none;align-items:center;gap:10px"><span id="archiveConfirmMsg"></span><button id="archiveConfirmYes" class="mini-btn" style="border-color:rgba(255,203,69,.72);color:var(--amber);min-width:0;padding:6px 10px">Confirm</button><button id="archiveConfirmNo" class="mini-btn" style="min-width:0;padding:6px 10px">Cancel</button></div></div></div>
         <div class="module-grid">
           <div class="panel">
             <div class="panel-head"><div><h3>Module 01 - Hybrid Dynamic Simulation</h3><p id="evmText"></p></div><span id="evmBadge" class="tag status-red">Red</span></div>
@@ -862,6 +862,126 @@ ${constructionTree(p)}
       window.showPage = function(page) {
         if (typeof origShowPage === 'function') origShowPage(page);
         if (page === 'projects') loadActiveProjects();
+      };
+    });
+  })();
+  </script>
+  <script>
+  (function() {
+    function getApiUrl() {
+      return ((typeof LIN_CONFIG !== 'undefined' && LIN_CONFIG.appsScriptApiUrl) || '').trim();
+    }
+
+    function deepDiveArchivePost(code, onSuccess, onError) {
+      var url = getApiUrl();
+      if (!url) { onError('API URL not configured'); return; }
+      var fullUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=archiveproject';
+      fetch(fullUrl, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectCode: code, reason: 'Archived from Deep Dive by HUD user' })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.ok === false) throw new Error((data.error && data.error.message) || 'archiveproject returned ok=false');
+        onSuccess(data);
+      })
+      .catch(function(err) { onError(err.message || String(err)); });
+    }
+
+    function showConfirmBar(code) {
+      var bar = document.getElementById('archiveConfirmBar');
+      var msg = document.getElementById('archiveConfirmMsg');
+      if (!bar || !msg) return;
+      msg.textContent = 'Archive ' + code + '?';
+      bar.style.display = 'flex';
+    }
+
+    function hideConfirmBar() {
+      var bar = document.getElementById('archiveConfirmBar');
+      if (bar) bar.style.display = 'none';
+    }
+
+    function showDetailMsg(text, isError) {
+      var existing = document.getElementById('archiveResultMsg');
+      if (existing) existing.parentNode.removeChild(existing);
+      var bar = document.getElementById('archiveConfirmBar');
+      if (!bar) return;
+      var div = document.createElement('div');
+      div.id = 'archiveResultMsg';
+      div.style.cssText = 'margin-top:8px;padding:9px 12px;border:1px solid ' +
+        (isError ? 'rgba(255,79,95,.40)' : 'rgba(54,255,154,.34)') +
+        ';background:' + (isError ? 'rgba(255,79,95,.06)' : 'rgba(54,255,154,.06)') +
+        ';font:800 11px/1.45 var(--mono);text-transform:uppercase;letter-spacing:.8px;color:' +
+        (isError ? 'var(--red)' : 'var(--green)');
+      div.textContent = text;
+      bar.parentNode.insertBefore(div, bar.nextSibling);
+    }
+
+    function removeProjectFromDropdown(code) {
+      // Deep dive has no project dropdown — code is set via openProject.
+      // Remove from the portfolio grid by re-rendering if renderProjects is available.
+      if (typeof window.renderProjects === 'function') {
+        var list = window.projects;
+        if (Array.isArray(list)) {
+          window.projects = list.filter(function(p) { return p.code !== code; });
+          window.renderProjects();
+        }
+      }
+    }
+
+    function goToPortfolio() {
+      var btn = document.querySelector('.nav-btn[data-page="portfolio"]');
+      if (btn) btn.click();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var archiveBtn  = document.getElementById('archiveProjectBtn');
+      var confirmYes  = document.getElementById('archiveConfirmYes');
+      var confirmNo   = document.getElementById('archiveConfirmNo');
+
+      if (!archiveBtn) return;
+
+      archiveBtn.addEventListener('click', function() {
+        var code = (window.selected && window.selected.code) || '';
+        if (!code) return;
+        hideConfirmBar();
+        var existing = document.getElementById('archiveResultMsg');
+        if (existing) existing.parentNode.removeChild(existing);
+        showConfirmBar(code);
+      });
+
+      if (confirmNo) {
+        confirmNo.addEventListener('click', function() {
+          hideConfirmBar();
+        });
+      }
+
+      if (confirmYes) {
+        confirmYes.addEventListener('click', function() {
+          var code = (window.selected && window.selected.code) || '';
+          if (!code) { hideConfirmBar(); return; }
+          hideConfirmBar();
+          deepDiveArchivePost(code,
+            function() {
+              showDetailMsg(code + ' has been archived.', false);
+              removeProjectFromDropdown(code);
+              setTimeout(goToPortfolio, 1200);
+            },
+            function(errMsg) {
+              showDetailMsg('ERROR: ' + errMsg, true);
+            }
+          );
+        });
+      }
+
+      // Keep confirm bar hidden when switching away from detail page
+      var origShowPage2 = window.showPage;
+      window.showPage = function(page) {
+        if (typeof origShowPage2 === 'function') origShowPage2(page);
+        if (page !== 'detail') hideConfirmBar();
       };
     });
   })();
