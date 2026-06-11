@@ -697,15 +697,15 @@ function updateProject_(rootId, body) {
 function createProject_(rootId, body) {
   var type = body.projectType; // Design, Construction, Combined
   var projectName = body.projectName;
-  var cpi = Number(body.cpi) || 1.00;
-  var spi = Number(body.spi) || 1.00;
-  var bacM = Number(body.bacM) || 0;
-  var health = Number(body.health) || 80;
-  var posteriorRisk = Number(body.posteriorRisk) || 0.20;
-  var cusum = Number(body.cusum) || 1.0;
-  var flaggedRfis = Number(body.flaggedRfis) || 0;
-  var conflicts = Number(body.conflicts) || 0;
-  var status = health >= 80 ? 'GREEN' : health >= 50 ? 'AMBER' : 'RED';
+  var cpi = body.cpi !== undefined ? Number(body.cpi) : 1.00;
+  var spi = body.spi !== undefined ? Number(body.spi) : 1.00;
+  var bacM = body.bacM !== undefined ? Number(body.bacM) : 0;
+  var health = body.health !== undefined ? Number(body.health) : 0;
+  var posteriorRisk = body.posteriorRisk !== undefined ? Number(body.posteriorRisk) : 0;
+  var cusum = body.cusum !== undefined ? Number(body.cusum) : 0;
+  var flaggedRfis = body.flaggedRfis !== undefined ? Number(body.flaggedRfis) : 0;
+  var conflicts = body.conflicts !== undefined ? Number(body.conflicts) : 0;
+  var status = 'PENDING';
   var p50EacM = Math.round((bacM / cpi) * 1000) / 1000;
   var p80EacM = Math.round((bacM / cpi) * 1.05 * 1000) / 1000;
 
