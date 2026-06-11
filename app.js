@@ -534,7 +534,7 @@
 
   function requestApi(action, params = {}) {
     const url = buildApiUrl(action, params);
-    if ((CONFIG.transport || "jsonp").toLowerCase() === "fetch") {
+    if ((CONFIG.transport || "fetch").toLowerCase() === "fetch") {
       return fetch(url, { method: "GET", mode: "cors", cache: "no-store" }).then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status} for ${action}`);
         return response.json();

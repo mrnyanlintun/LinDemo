@@ -9,7 +9,7 @@
 const LIN_CONFIG = {
   driveRootFolderId: "14u6LT8E1xKBLbHwq90SySmfou0oVlSqR",
   appsScriptApiUrl: "https://script.google.com/macros/s/AKfycbzGhRB3htkXMjo1dyUdDNncYnIpOm333dvI51eyLrMBLE1NjtdGlB7Vpmtp7ucxf_Yq/exec",
-  transport: "jsonp",
+  transport: "fetch",
   useSampleDataWhenUnconfigured: true,
   phaseLabel: "Phase 4A",
   dataRootNameExpected: "Lin_Demo_Data_v0_2",
