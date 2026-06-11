@@ -88,6 +88,12 @@ function doPost(e) {
         }
       }
       payload = updateProject_(rootId, body);
+    } else if (action === 'createproject') {
+      var body = JSON.parse(e.postData.contents);
+      return output_(createProject_(rootId, body), null);
+    } else if (action === 'archiveproject') {
+      var body = JSON.parse(e.postData.contents);
+      return output_(archiveProject_(rootId, body), null);
     } else {
       payload = errorPayload_('Unknown POST action: ' + action, action);
     }
@@ -159,7 +165,9 @@ function getHealth_(rootId) {
       '?action=project&id=SYN-DES-001',
       '?action=audit&id=SYN-DES-001',
       '?action=definitions',
-      'POST ?action=update (body: projectCode, cpi, spi, bacM, p50EacM, p80EacM, posteriorRisk, cusum, flaggedRfis, conflicts, health, status)'
+      'POST ?action=update (body: projectCode, cpi, spi, bacM, p50EacM, p80EacM, posteriorRisk, cusum, flaggedRfis, conflicts, health, status)',
+      'POST ?action=createProject',
+      'POST ?action=archiveProject'
     ]
   });
 }
@@ -682,6 +690,220 @@ function updateProject_(rootId, body) {
     action: 'update',
     updated: projectCode,
     fileId: file.getId(),
+    timestamp: new Date().toISOString()
+  };
+}
+
+function createProject_(rootId, body) {
+  var type = body.projectType; // Design, Construction, Combined
+  var projectName = body.projectName;
+  var cpi = Number(body.cpi) || 1.00;
+  var spi = Number(body.spi) || 1.00;
+  var bacM = Number(body.bacM) || 0;
+  var health = Number(body.health) || 80;
+  var posteriorRisk = Number(body.posteriorRisk) || 0.20;
+  var cusum = Number(body.cusum) || 1.0;
+  var flaggedRfis = Number(body.flaggedRfis) || 0;
+  var conflicts = Number(body.conflicts) || 0;
+  var status = health >= 80 ? 'GREEN' : health >= 50 ? 'AMBER' : 'RED';
+  var p50EacM = Math.round((bacM / cpi) * 1000) / 1000;
+  var p80EacM = Math.round((bacM / cpi) * 1.05 * 1000) / 1000;
+
+  if (!type || !projectName) return { ok: false, error: 'projectType and projectName are required' };
+
+  // Auto-generate project code
+  var tokenMap = { Design: 'DES', Construction: 'CON', Combined: 'CMB' };
+  var token = tokenMap[type];
+  if (!token) return { ok: false, error: 'Invalid projectType. Must be Design, Construction, or Combined.' };
+
+  // Find highest existing code number for this type
+  var maxNum = 0;
+  for (var i = 0; i < LIN_ROSTER.length; i++) {
+    var existing = LIN_ROSTER[i].code;
+    if (existing.indexOf('SYN-' + token + '-') === 0) {
+      var num = parseInt(existing.split('-')[2], 10);
+      if (num > maxNum) maxNum = num;
+    }
+  }
+  // Also scan Drive for archived projects with higher numbers
+  var rootFolder = DriveApp.getFolderById(rootId);
+  var archiveFolder = findDirectFolder_(rootFolder, '00_Archive');
+  if (archiveFolder) {
+    var archiveFolders = archiveFolder.getFolders();
+    while (archiveFolders.hasNext()) {
+      var af = archiveFolders.next();
+      var aCode = extractProjectCode_(af.getName());
+      if (aCode && aCode.indexOf('SYN-' + token + '-') === 0) {
+        var aNum = parseInt(aCode.split('-')[2], 10);
+        if (aNum > maxNum) maxNum = aNum;
+      }
+    }
+  }
+  var nextNum = maxNum + 1;
+  var code = 'SYN-' + token + '-' + (nextNum < 10 ? '00' + nextNum : nextNum < 100 ? '0' + nextNum : nextNum);
+
+  // Find category folder
+  var categoryFolderName = type === 'Design' ? '01_Design_Only_Projects' :
+    type === 'Construction' ? '02_Construction_Only_Projects' :
+    '03_Combined_Design_Construction_Projects';
+  var categoryFolder = findDirectFolder_(rootFolder, categoryFolderName);
+  if (!categoryFolder) return { ok: false, error: 'Category folder not found: ' + categoryFolderName };
+
+  // Create project folder
+  var projectFolderName = code + '_' + projectName.replace(/[^a-zA-Z0-9 ]/g, '').replace(/ /g, '_');
+  var projectFolder = categoryFolder.createFolder(projectFolderName);
+
+  // Create 9 subfolders
+  var subfolders = [
+    '00_Project_Profile',
+    '01_Project_Management',
+    '02_Design_Record',
+    '03_Construction_Administration',
+    '04_Cost_EVM_Schedule',
+    '05_Document_Risk_Source',
+    '06_Model_Outputs',
+    '07_Governance_Decision_Card',
+    '08_Audit_Trails'
+  ];
+  var folderIds = {};
+  for (var s = 0; s < subfolders.length; s++) {
+    var sf = projectFolder.createFolder(subfolders[s]);
+    folderIds[subfolders[s]] = sf.getId();
+  }
+
+  // Create template files
+  var profileFolder = projectFolder.getFoldersByName('00_Project_Profile').next();
+  profileFolder.createFile('project_profile.json', JSON.stringify({
+    code: code,
+    projectName: projectName,
+    type: type,
+    status: status,
+    health: health,
+    createdAt: new Date().toISOString(),
+    createdBy: 'Lin HUD'
+  }, null, 2), 'application/json');
+
+  var auditFolder = projectFolder.getFoldersByName('08_Audit_Trails').next();
+  var calcTrace = {
+    code: code,
+    cpi: cpi,
+    spi: spi,
+    bacM: bacM,
+    p50EacM: p50EacM,
+    p80EacM: p80EacM,
+    health: health,
+    status: status,
+    posteriorRisk: posteriorRisk,
+    cusum: cusum,
+    flaggedRfis: flaggedRfis,
+    conflicts: conflicts,
+    _createdAt: new Date().toISOString(),
+    _createdBy: 'Lin HUD createProject endpoint'
+  };
+  auditFolder.createFile('calculation_trace.json', JSON.stringify(calcTrace, null, 2), 'application/json');
+  auditFolder.createFile('run_log.json', JSON.stringify([{
+    event: 'project_created',
+    projectCode: code,
+    projectName: projectName,
+    createdBy: 'Lin HUD',
+    timestamp: new Date().toISOString()
+  }], null, 2), 'application/json');
+
+  // Add to LIN_ROSTER in memory for this request
+  LIN_ROSTER.push({
+    code: code,
+    projectName: projectName,
+    type: type,
+    status: status,
+    health: health,
+    cpi: cpi,
+    spi: spi,
+    bacM: bacM,
+    p50EacM: p50EacM,
+    p80EacM: p80EacM,
+    posteriorRisk: posteriorRisk,
+    cusum: cusum,
+    flaggedRfis: flaggedRfis,
+    conflicts: conflicts
+  });
+
+  // Clear portfolio cache
+  try { CacheService.getScriptCache().remove(cacheKey_('portfolio', rootId)); } catch(e) {}
+
+  return {
+    ok: true,
+    created: true,
+    code: code,
+    projectName: projectName,
+    type: type,
+    status: status,
+    folderId: projectFolder.getId(),
+    folderName: projectFolderName,
+    timestamp: new Date().toISOString()
+  };
+}
+
+function archiveProject_(rootId, body) {
+  var code = body.projectCode;
+  var reason = body.reason || 'Archived via Lin HUD';
+  if (!code) return { ok: false, error: 'projectCode is required' };
+
+  var rootFolder = DriveApp.getFolderById(rootId);
+  var folderInfo = findProjectFolderByCode_(rootFolder, code);
+  if (!folderInfo) return { ok: false, error: 'Project folder not found: ' + code };
+
+  // Create 00_Archive folder if it does not exist
+  var archiveFolder = findDirectFolder_(rootFolder, '00_Archive');
+  if (!archiveFolder) archiveFolder = rootFolder.createFolder('00_Archive');
+
+  // Move project folder to archive
+  var projectFolder = folderInfo.folder;
+  archiveFolder.addFile(DriveApp.getFileById(projectFolder.getId()));
+  // Remove from original category folder
+  var categoryFolder = findDirectFolder_(rootFolder, folderInfo.path.split('/')[0]);
+  if (categoryFolder) {
+    try { categoryFolder.removeFile(DriveApp.getFileById(projectFolder.getId())); } catch(e) {}
+  }
+
+  // Write archive record to audit trail
+  var auditFolder = findNestedFolder_(projectFolder, ['08_Audit_Trails']);
+  if (auditFolder) {
+    var logFiles = auditFolder.getFilesByName('run_log.json');
+    var runLog = [];
+    if (logFiles.hasNext()) {
+      try { runLog = JSON.parse(logFiles.next().getBlob().getDataAsString()); } catch(e) {}
+    }
+    runLog.push({
+      event: 'project_archived',
+      projectCode: code,
+      reason: reason,
+      archivedBy: 'Lin HUD',
+      timestamp: new Date().toISOString()
+    });
+    var token = ScriptApp.getOAuthToken();
+    var existingLog = auditFolder.getFilesByName('run_log.json');
+    if (existingLog.hasNext()) {
+      var logFile = existingLog.next();
+      UrlFetchApp.fetch(
+        'https://www.googleapis.com/upload/drive/v3/files/' + logFile.getId() + '?uploadType=media',
+        {
+          method: 'PATCH',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          payload: JSON.stringify(runLog, null, 2),
+          muteHttpExceptions: true
+        }
+      );
+    }
+  }
+
+  // Clear portfolio cache
+  try { CacheService.getScriptCache().remove(cacheKey_('portfolio', rootId)); } catch(e) {}
+
+  return {
+    ok: true,
+    archived: true,
+    code: code,
+    reason: reason,
     timestamp: new Date().toISOString()
   };
 }
