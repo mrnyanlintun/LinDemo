@@ -938,51 +938,67 @@ ${constructionTree(p)}
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      var archiveBtn  = document.getElementById('archiveProjectBtn');
-      var confirmYes  = document.getElementById('archiveConfirmYes');
-      var confirmNo   = document.getElementById('archiveConfirmNo');
+      if (!document.getElementById('archiveProjectBtn')) return;
 
-      if (!archiveBtn) return;
-
-      archiveBtn.addEventListener('click', function() {
+      document.getElementById('archiveProjectBtn').addEventListener('click', function() {
         var code = (window.selected && window.selected.code) || '';
         if (!code) return;
-        hideConfirmBar();
-        var existing = document.getElementById('archiveResultMsg');
-        if (existing) existing.parentNode.removeChild(existing);
-        showConfirmBar(code);
-      });
-
-      if (confirmNo) {
-        confirmNo.addEventListener('click', function() {
-          hideConfirmBar();
+        var existing = document.getElementById('archiveConfirmBox');
+        if (existing) { existing.remove(); return; }
+        var box = document.createElement('div');
+        box.id = 'archiveConfirmBox';
+        box.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
+          'background:#0d1117;border:1px solid #f59e0b;padding:32px 40px;z-index:9999;' +
+          'min-width:320px;text-align:center;clip-path:polygon(0 12px,12px 0,100% 0,' +
+          '100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);';
+        box.innerHTML =
+          '<p style="color:#f59e0b;font-size:0.75rem;letter-spacing:0.1em;margin:0 0 8px">CONFIRM ARCHIVE</p>' +
+          '<p style="color:#e2e8f0;margin:0 0 24px">Archive project <strong style="color:#00e5ff">' + code + '</strong>?<br>' +
+          '<span style="font-size:0.8rem;color:#94a3b8">This moves the project to 00_Archive.<br>It remains visible with an Archived badge.</span></p>' +
+          '<button id="archiveConfirmYes" style="background:#f59e0b;color:#000;border:none;' +
+          'padding:8px 24px;cursor:pointer;font-weight:700;margin-right:12px;">Archive</button>' +
+          '<button id="archiveConfirmNo" style="background:transparent;color:#94a3b8;' +
+          'border:1px solid #334155;padding:8px 24px;cursor:pointer;">Cancel</button>';
+        document.body.appendChild(box);
+        document.getElementById('archiveConfirmNo').addEventListener('click', function() {
+          box.remove();
         });
-      }
-
-      if (confirmYes) {
-        confirmYes.addEventListener('click', function() {
-          var code = (window.selected && window.selected.code) || '';
-          if (!code) { hideConfirmBar(); return; }
-          hideConfirmBar();
-          deepDiveArchivePost(code,
-            function() {
-              showDetailMsg(code + ' has been archived.', false);
-              removeProjectFromDropdown(code);
-              setTimeout(goToPortfolio, 1200);
-            },
-            function(errMsg) {
-              showDetailMsg('ERROR: ' + errMsg, true);
+        document.getElementById('archiveConfirmYes').addEventListener('click', function() {
+          box.innerHTML = '<p style="color:#f59e0b;font-size:0.75rem;letter-spacing:0.1em">ARCHIVING ' + code + '...</p>';
+          fetch(window.LIN_CONFIG.appsScriptApiUrl + '?action=archiveproject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectCode: code, reason: 'Archived from Deep Dive' })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.ok) {
+              box.innerHTML = '<p style="color:#22c55e;font-size:0.75rem;letter-spacing:0.1em">' +
+                code + ' ARCHIVED</p><p style="color:#94a3b8;font-size:0.8rem">Returning to portfolio...</p>';
+              if (Array.isArray(window.projects)) {
+                window.projects = window.projects.filter(function(p) { return p.code !== code; });
+                if (typeof window.renderProjects === 'function') window.renderProjects();
+              }
+              setTimeout(function() {
+                box.remove();
+                document.querySelector('[data-page="portfolio"]').click();
+              }, 1800);
+            } else {
+              box.innerHTML = '<p style="color:#ef4444;font-size:0.8rem">Error: ' +
+                (d.error || 'unknown') + '</p>' +
+                '<button onclick="document.getElementById(\'archiveConfirmBox\').remove()" ' +
+                'style="margin-top:12px;padding:6px 16px;background:transparent;color:#94a3b8;' +
+                'border:1px solid #334155;cursor:pointer;">Close</button>';
             }
-          );
+          })
+          .catch(function(err) {
+            box.innerHTML = '<p style="color:#ef4444;font-size:0.8rem">Request failed: ' + err.message + '</p>' +
+              '<button onclick="document.getElementById(\'archiveConfirmBox\').remove()" ' +
+              'style="margin-top:12px;padding:6px 16px;background:transparent;color:#94a3b8;' +
+              'border:1px solid #334155;cursor:pointer;">Close</button>';
+          });
         });
-      }
-
-      // Keep confirm bar hidden when switching away from detail page
-      var origShowPage2 = window.showPage;
-      window.showPage = function(page) {
-        if (typeof origShowPage2 === 'function') origShowPage2(page);
-        if (page !== 'detail') hideConfirmBar();
-      };
+      });
     });
   })();
   </script>
