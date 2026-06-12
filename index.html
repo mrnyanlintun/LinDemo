@@ -684,7 +684,7 @@ ${constructionTree(p)}
       var loadingMsg = document.getElementById('chatMessages').lastChild;
       fetch(window.LIN_CONFIG.appsScriptApiUrl + '?action=chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ question: question, projectCode: projectCode || null })
       })
       .then(function(r) { return r.json(); })
@@ -872,7 +872,7 @@ ${constructionTree(p)}
         method: 'POST',
         mode: 'cors',
         cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(body)
       })
       .then(function(r) { return r.json(); })
@@ -1010,7 +1010,7 @@ ${constructionTree(p)}
         method: 'POST',
         mode: 'cors',
         cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(body)
       })
       .then(function(r) {
@@ -1176,7 +1176,7 @@ ${constructionTree(p)}
         method: 'POST',
         mode: 'cors',
         cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ projectCode: code, reason: 'Archived from Deep Dive by HUD user' })
       })
       .then(function(r) { return r.json(); })
@@ -1263,7 +1263,7 @@ ${constructionTree(p)}
           box.innerHTML = '<p style="color:#f59e0b;font-size:0.75rem;letter-spacing:0.1em">ARCHIVING ' + code + '...</p>';
           fetch(window.LIN_CONFIG.appsScriptApiUrl + '?action=archiveproject', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ projectCode: code, reason: 'Archived from Deep Dive' })
           })
           .then(function(r) { return r.json(); })
@@ -1405,7 +1405,7 @@ function sendFloatChat() {
   var loader = msgs.lastChild;
   fetch(window.LIN_CONFIG.appsScriptApiUrl + '?action=chat', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({question:q, projectCode:code||null})
   })
   .then(function(r){return r.json();})
