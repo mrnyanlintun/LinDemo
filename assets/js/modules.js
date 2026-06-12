@@ -201,15 +201,9 @@
 
   /* ---------- page rendering ---------- */
 
-  function renderModulesPage() {
-    const root = document.getElementById("modules-root");
-    if (!root) return;
-    const projects = LIN_PROJECTS;
+  function moduleCardsHtml(projects) {
     const mods = [module01(projects), module02(projects), module03(projects), module04(projects), module05(projects)];
-
-    root.innerHTML =
-      `<p class="mod-banner">All graphs below are <strong>illustrative views of the synthetic demonstration data</strong> — they are not live or validated model output.</p>` +
-      mods.map((m) => `
+    return mods.map((m) => `
         <section class="panel mod-card" aria-label="Module ${m.num}: ${esc(m.title)}">
           <div class="mod-head">
             <span class="mod-num">MODULE ${m.num}</span>
@@ -222,5 +216,22 @@
         </section>`).join("");
   }
 
-  window.LinModules = { renderModulesPage };
+  const BANNER = `<p class="mod-banner">All graphs below are <strong>illustrative views of the synthetic demonstration data</strong> — they are not live or validated model output.</p>`;
+
+  /* Whole-portfolio overview (Modules nav item) */
+  function renderModulesPage() {
+    const root = document.getElementById("modules-root");
+    if (!root) return;
+    root.innerHTML = BANNER + moduleCardsHtml(LIN_PROJECTS);
+  }
+
+  /* All five modules computed for ONE project (Project Detail page).
+     Same builders, single-project array — no duplicated rules anywhere;
+     Module 05 still calls decision.js live. */
+  function renderProjectModules(project, root) {
+    if (!root) return;
+    root.innerHTML = BANNER + moduleCardsHtml([project]);
+  }
+
+  window.LinModules = { renderModulesPage, renderProjectModules };
 })();

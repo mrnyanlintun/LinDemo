@@ -89,7 +89,7 @@
     if (i < 0) return;
     LIN_ARCHIVED.push(LIN_PROJECTS.splice(i, 1)[0]);
     saveArchivedIds();
-    logEvent(`ARCHIVED project ${id}. Removed from radar and active views; recoverable on the Projects page.`);
+    logEvent(`ARCHIVED project ${id}. Removed from the portfolio and active views; recoverable on the Manage Projects page.`);
     if (window.LinApp) LinApp.refresh();
   }
 
@@ -98,7 +98,7 @@
     if (i < 0) return;
     LIN_PROJECTS.push(LIN_ARCHIVED.splice(i, 1)[0]);
     saveArchivedIds();
-    logEvent(`RESTORED project ${id} from archive. Back on the radar and in active views.`);
+    logEvent(`RESTORED project ${id} from archive. Back on the portfolio and in active views.`);
     if (window.LinApp) LinApp.refresh();
   }
 
@@ -243,7 +243,7 @@
     document.getElementById("ingest-approve").addEventListener("click", () => {
       applyProposal(prop);
       logEvent(`APPROVED ingest (${prop.docType}) on ${prop.projectId}: doc ${prop.from.score.toFixed(2)}→${prop.to.score.toFixed(2)}, health ${prop.from.health}→${prop.to.health}. Rules: ${prop.fired.map((f) => f.rule.id).join(", ") || "none"}.`);
-      box.innerHTML = `<p class="kn-sub">Applied. The project has been re-plotted on the radar and re-run through the decision rules.</p>`;
+      box.innerHTML = `<p class="kn-sub">Applied. The project has been re-plotted on the portfolio scope and re-run through the decision rules.</p>`;
       pendingProposal = null;
       if (window.LinApp) { LinApp.refresh(); LinApp.selectProject(prop.projectId); }
     });
@@ -254,67 +254,7 @@
     });
   }
 
-  function renderIngestPage() {
-    const root = document.getElementById("ingest-root");
-    if (!root) return;
-
-    root.innerHTML =
-      `<div class="kn-grid">
-        <section class="panel">
-          <p class="eyebrow">Create project</p>
-          <h2 class="kn-h">New synthetic project</h2>
-          <p class="kn-sub">Generates the next SYN code, seeds baseline synthetic signals, and plots it on the radar through the same decision.js rules. Persists in this browser only (localStorage).</p>
-          <label class="rationale-label" for="np-name">Project name</label>
-          <input id="np-name" class="ig-input" maxlength="80" placeholder="e.g. Concourse Wayfinding Refresh" />
-          <label class="rationale-label" for="np-sector">Delivery type</label>
-          <select id="np-sector" class="ig-input">
-            <option value="design">Design</option>
-            <option value="construction">Construction</option>
-            <option value="combined">Combined</option>
-          </select>
-          <div class="dc-actions"><button id="np-create" class="btn primary">Create synthetic project</button></div>
-          <p id="np-msg" class="kn-sub" aria-live="polite"></p>
-        </section>
-
-        <section class="panel">
-          <p class="eyebrow">Ingest document</p>
-          <h2 class="kn-h">Run rule extraction on a document</h2>
-          <p class="kn-sub">Paste or upload text (.txt / .csv / PDF-extracted text). The visible keyword rules below run client-side — no NLP, no LLM — and a human must Approve before anything changes.</p>
-          <label class="rationale-label" for="ig-project">Project</label>
-          <select id="ig-project" class="ig-input">${projectOptions()}</select>
-          <label class="rationale-label" for="ig-doctype">Document type</label>
-          <select id="ig-doctype" class="ig-input">${DOC_TYPES.map((d) => `<option>${d}</option>`).join("")}</select>
-          <label class="rationale-label" for="ig-text">Document text</label>
-          <textarea id="ig-text" class="ig-textarea" placeholder="Paste document text here, or load a file below…"></textarea>
-          <input type="file" id="ig-file" accept=".txt,.csv,.md,.text" class="ig-file" aria-label="Load text file" />
-          <details class="kn-topic"><summary>The rules that will run (visible by design)</summary>
-            <ul class="ig-fired">${INGEST_RULES.map((r) =>
-              `<li><span class="mod-mono">${esc(r.id)}</span> ${esc(r.label)} — /${esc(r.pattern.source)}/i → doc ${r.scoreDelta >= 0 ? "+" : ""}${r.scoreDelta.toFixed(2)}, health ${r.healthDelta >= 0 ? "+" : ""}${r.healthDelta}</li>`).join("")}
-            </ul>
-          </details>
-          <div class="dc-actions"><button id="ig-run" class="btn primary">Run extraction</button></div>
-          <div id="ingest-result" aria-live="polite"></div>
-        </section>
-      </div>
-      <section class="panel" style="margin-top:18px">
-        <p class="eyebrow">Ingest log</p>
-        <div id="ingest-log"></div>
-      </section>`;
-
-    renderLog();
-
-    document.getElementById("np-create").addEventListener("click", () => {
-      const name = document.getElementById("np-name").value.trim();
-      const sector = document.getElementById("np-sector").value;
-      const msg = document.getElementById("np-msg");
-      if (name.length < 3) { msg.textContent = "Enter a project name (min 3 characters)."; return; }
-      const p = createProject(name, sector);
-      msg.textContent = `Created ${p.id}. It is now on the radar with a derived decision.`;
-      document.getElementById("np-name").value = "";
-      document.getElementById("ig-project").innerHTML = projectOptions();
-      if (window.LinApp) { LinApp.refresh(); LinApp.selectProject(p.id); }
-    });
-
+  function wireIngestControls() {
     document.getElementById("ig-file").addEventListener("change", (e) => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
@@ -337,10 +277,12 @@
     });
   }
 
-  /* ---------- projects page (active + archived, archive on the project) ---------- */
+  /* ---------- Manage Projects page ----------
+     One page: create project, active/archived lifecycle, and document
+     ingest scoped to the project selected here. */
 
-  function renderProjectsPage() {
-    const root = document.getElementById("projects-root");
+  function renderManagePage() {
+    const root = document.getElementById("manage-root");
     if (!root) return;
 
     const stateOf = (p) => deriveHealthState(p);
@@ -350,7 +292,11 @@
         <span class="pr-code">${esc(p.id)}</span>
         <span class="pr-name">${esc(p.name)}</span>
         <span class="li-state state-${state.toLowerCase().replace("-review", "")}">${esc(state)}</span>
-        <button class="btn small" data-archive="${esc(p.id)}">Archive</button>
+        <span class="pr-actions">
+          <button class="btn small" data-detail="${esc(p.id)}">Detail</button>
+          <button class="btn small" data-ingest="${esc(p.id)}">Ingest doc</button>
+          <button class="btn small" data-archive="${esc(p.id)}">Archive</button>
+        </span>
       </div>`;
     }).join("");
 
@@ -365,26 +311,88 @@
     root.innerHTML =
       `<div class="kn-grid">
         <section class="panel">
+          <p class="eyebrow">Create project</p>
+          <h2 class="kn-h">New synthetic project</h2>
+          <p class="kn-sub">Generates the next SYN code, seeds baseline synthetic signals, and plots it on the portfolio scope through the same decision.js rules. Persists in this browser only (localStorage).</p>
+          <label class="rationale-label" for="np-name">Project name</label>
+          <input id="np-name" class="ig-input" maxlength="80" placeholder="e.g. Concourse Wayfinding Refresh" />
+          <label class="rationale-label" for="np-sector">Delivery type</label>
+          <select id="np-sector" class="ig-input">
+            <option value="design">Design</option>
+            <option value="construction">Construction</option>
+            <option value="combined">Hybrid</option>
+          </select>
+          <div class="dc-actions"><button id="np-create" class="btn primary">Create synthetic project</button></div>
+          <p id="np-msg" class="kn-sub" aria-live="polite"></p>
+        </section>
+
+        <section class="panel">
           <p class="eyebrow">Active (${LIN_PROJECTS.length})</p>
           ${activeRows || `<p class="pr-empty">No active projects.</p>`}
-        </section>
-        <section class="panel">
-          <p class="eyebrow">Archived (${LIN_ARCHIVED.length})</p>
-          ${archivedRows || `<p class="pr-empty">Nothing archived. Archive keeps a project recoverable while removing it from the radar.</p>`}
+          <p class="eyebrow" style="margin-top:16px">Archived (${LIN_ARCHIVED.length})</p>
+          ${archivedRows || `<p class="pr-empty">Nothing archived. Archive keeps a project recoverable while removing it from the portfolio.</p>`}
         </section>
       </div>
+
+      <section class="panel" style="margin-top:18px" id="ingest-panel">
+        <p class="eyebrow">Ingest document</p>
+        <h2 class="kn-h">Run rule extraction for the selected project</h2>
+        <p class="kn-sub">Paste or upload text (.txt / .csv / PDF-extracted text). The visible keyword rules below run client-side — no NLP, no LLM — and a human must Approve before anything changes.</p>
+        <div class="kn-grid">
+          <div>
+            <label class="rationale-label" for="ig-project">Project</label>
+            <select id="ig-project" class="ig-input">${projectOptions()}</select>
+            <label class="rationale-label" for="ig-doctype">Document type</label>
+            <select id="ig-doctype" class="ig-input">${DOC_TYPES.map((d) => `<option>${d}</option>`).join("")}</select>
+            <details class="kn-topic"><summary>The rules that will run (visible by design)</summary>
+              <ul class="ig-fired">${INGEST_RULES.map((r) =>
+                `<li><span class="mod-mono">${esc(r.id)}</span> ${esc(r.label)} — /${esc(r.pattern.source)}/i → doc ${r.scoreDelta >= 0 ? "+" : ""}${r.scoreDelta.toFixed(2)}, health ${r.healthDelta >= 0 ? "+" : ""}${r.healthDelta}</li>`).join("")}
+              </ul>
+            </details>
+          </div>
+          <div>
+            <label class="rationale-label" for="ig-text">Document text</label>
+            <textarea id="ig-text" class="ig-textarea" placeholder="Paste document text here, or load a file below…"></textarea>
+            <input type="file" id="ig-file" accept=".txt,.csv,.md,.text" class="ig-file" aria-label="Load text file" />
+            <div class="dc-actions"><button id="ig-run" class="btn primary">Run extraction</button></div>
+          </div>
+        </div>
+        <div id="ingest-result" aria-live="polite"></div>
+      </section>
+
       <section class="panel" style="margin-top:18px">
         <p class="eyebrow">Project event log</p>
         <div id="ingest-log"></div>
       </section>`;
 
     renderLog();
+    wireIngestControls();
+
+    document.getElementById("np-create").addEventListener("click", () => {
+      const name = document.getElementById("np-name").value.trim();
+      const sector = document.getElementById("np-sector").value;
+      const msg = document.getElementById("np-msg");
+      if (name.length < 3) { msg.textContent = "Enter a project name (min 3 characters)."; return; }
+      const p = createProject(name, sector);
+      if (window.LinApp) LinApp.refresh();
+      renderManagePage();
+      document.getElementById("np-msg").textContent = `Created ${p.id}. It is on the portfolio scope with a derived decision.`;
+      document.getElementById("ig-project").value = p.id;
+    });
 
     root.querySelectorAll("[data-archive]").forEach((b) =>
-      b.addEventListener("click", () => { archiveProject(b.dataset.archive); renderProjectsPage(); }));
+      b.addEventListener("click", () => { archiveProject(b.dataset.archive); renderManagePage(); }));
     root.querySelectorAll("[data-restore]").forEach((b) =>
-      b.addEventListener("click", () => { restoreProject(b.dataset.restore); renderProjectsPage(); }));
+      b.addEventListener("click", () => { restoreProject(b.dataset.restore); renderManagePage(); }));
+    root.querySelectorAll("[data-detail]").forEach((b) =>
+      b.addEventListener("click", () => LinApp.openDetail(b.dataset.detail)));
+    root.querySelectorAll("[data-ingest]").forEach((b) =>
+      b.addEventListener("click", () => {
+        document.getElementById("ig-project").value = b.dataset.ingest;
+        document.getElementById("ingest-panel").scrollIntoView({ block: "start" });
+        document.getElementById("ig-text").focus();
+      }));
   }
 
-  window.LinIngest = { mergeUserProjects, renderIngestPage, renderProjectsPage, INGEST_RULES };
+  window.LinIngest = { mergeUserProjects, renderManagePage, INGEST_RULES };
 })();

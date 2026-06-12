@@ -11,7 +11,9 @@
   const SECTORS = {
     design:       { label: "DESIGN",       start: -90,  end: -18 },
     construction: { label: "CONSTRUCTION", start: -18,  end: 54  },
-    combined:     { label: "COMBINED",     start: 54,   end: 126 }
+    // internal key stays "combined" (and SYN-CMB codes are unchanged);
+    // only the human-facing sector label is "HYBRID"
+    combined:     { label: "HYBRID",       start: 54,   end: 126 }
   };
 
   const STATUS_COLOR = {
@@ -202,7 +204,7 @@
       g.appendChild(dot);
       g.appendChild(label);
 
-      const choose = () => selectProject(p.id);
+      const choose = () => openDetail(p.id);
       g.addEventListener("click", choose);
       g.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); }
@@ -244,7 +246,7 @@
         `<span class="li-code">${p.id}</span>` +
         `<span class="li-name">${p.name}</span>` +
         `<span class="li-state state-${state.toLowerCase().replace("-review","")}">${state}</span>`;
-      btn.addEventListener("click", () => selectProject(p.id));
+      btn.addEventListener("click", () => openDetail(p.id));
       li.appendChild(btn);
       ul.appendChild(li);
     });
@@ -262,7 +264,7 @@
     return `<span class="pill pill-${status}">${map[status] || status}</span>`;
   }
 
-  function renderLedger(p) {
+  function renderLedger(p, root = $("#ledger")) {
     const s = p.signals;
     const conflict = classifyConflict(p);
 
@@ -296,7 +298,7 @@
     const conflictClass =
       conflict === "Agreement — low risk" ? "conflict-calm" : "conflict-alert";
 
-    $("#ledger").innerHTML =
+    root.innerHTML =
       `<div class="ledger-head">
          <div>
            <p class="eyebrow">Signal ledger</p>
@@ -322,20 +324,22 @@
       `</div>`;
   }
 
-  /* ---------- decision card ---------- */
-  function renderDecisionCard(p) {
+  /* ---------- decision card ----------
+     Renders into any container (portfolio side panel or Project Detail),
+     so all controls are class-scoped to the container — no duplicate ids. */
+  function renderDecisionCard(p, root = $("#decision-card")) {
     const d = deriveDecision(p);
     const stateClass = d.healthState.toLowerCase().replace("-review", "");
 
     const fairnessBlock = d.fairnessGateRequired
       ? `<label class="fairness-gate">
-           <input type="checkbox" id="fairness-check" />
+           <input type="checkbox" class="fairness-check" />
            <span>Contractor response opportunity will be provided before any formal action.
            Required before this decision can be recorded.</span>
          </label>`
       : "";
 
-    $("#decision-card").innerHTML =
+    root.innerHTML =
       `<div class="dc-head">
          <div>
            <p class="eyebrow">PCEIF governance decision</p>
@@ -350,21 +354,21 @@
          <div class="dc-field dc-wide"><span class="dc-label">Documentation required</span><span class="dc-value">${d.documentation}</span></div>
        </div>
        ${fairnessBlock}
-       <label class="rationale-label" for="rationale">Reviewer rationale <span class="req">(required, min 20 characters)</span></label>
-       <textarea id="rationale" placeholder="State why this action is taken, deferred, or overridden. Recorded to the audit log."></textarea>
+       <label class="rationale-label">Reviewer rationale <span class="req">(required, min 20 characters)</span>
+       <textarea class="rationale" placeholder="State why this action is taken, deferred, or overridden. Recorded to the audit log."></textarea></label>
        <div class="dc-actions">
-         <button id="record-btn" class="btn primary" disabled>Record decision</button>
-         <button id="export-btn" class="btn">Export audit JSON</button>
+         <button class="btn primary record-btn" disabled>Record decision</button>
+         <button class="btn export-btn">Export audit JSON</button>
        </div>
        <p class="dc-note">Recommendation only — a named human reviewer records the decision. The recommendation does not trigger any action on its own.</p>`;
 
-    wireDecisionControls(p, d);
+    wireDecisionControls(p, d, root);
   }
 
-  function wireDecisionControls(p, d) {
-    const rationale = $("#rationale");
-    const recordBtn = $("#record-btn");
-    const fairnessCheck = $("#fairness-check"); // may be null
+  function wireDecisionControls(p, d, root) {
+    const rationale = $(".rationale", root);
+    const recordBtn = $(".record-btn", root);
+    const fairnessCheck = $(".fairness-check", root); // may be null
 
     const evaluate = () => {
       const longEnough = rationale.value.trim().length >= 20;
@@ -391,7 +395,7 @@
       evaluate();
     });
 
-    $("#export-btn").addEventListener("click", () => {
+    $(".export-btn", root).addEventListener("click", () => {
       const reviewerInput = {
         rationale: rationale.value.trim() || "(not recorded at export time)",
         fairnessAcknowledged: fairnessCheck ? fairnessCheck.checked : null,
@@ -442,6 +446,14 @@
     renderDecisionCard(p);
   }
 
+  /* Drill-down: clicking a blip or list row opens Project Detail
+     (and updates the portfolio side ledger via selectProject). */
+  function openDetail(id) {
+    selectProject(id);
+    if (window.LinDetail) LinDetail.render(id);
+    showPage("detail");
+  }
+
   /* ---------- theme switch ---------- */
   function applyTheme(theme) {
     document.body.dataset.theme = theme;
@@ -477,8 +489,8 @@
     // (re)render content pages so they reflect the latest portfolio state
     if (page === "modules" && window.LinModules) LinModules.renderModulesPage();
     if (page === "knowledge" && window.LinKnowledge) LinKnowledge.renderKnowledgePage();
-    if (page === "ingest" && window.LinIngest) LinIngest.renderIngestPage();
-    if (page === "projects" && window.LinIngest) LinIngest.renderProjectsPage();
+    if (page === "manage" && window.LinIngest) LinIngest.renderManagePage();
+    if (page === "detail" && window.LinDetail && selectedId) LinDetail.render(selectedId);
     window.scrollTo({ top: 0 });
   }
 
@@ -496,7 +508,13 @@
         selectProject(LIN_PROJECTS[0].id);
       }
     },
-    selectProject(id) { showPage("radar"); selectProject(id); }
+    selectProject(id) { showPage("portfolio"); selectProject(id); },
+    openDetail,
+    showPage,
+    getSelectedId() { return selectedId; },
+    // shared renderers, reused by the Project Detail page (detail.js)
+    renderLedger,
+    renderDecisionCard
   };
 
   /* ---------- init ---------- */
@@ -521,7 +539,7 @@
     buildFallbackList();
     renderDecisionLog();
     startClock();
-    showPage("radar");
+    showPage("portfolio");
 
     // default selection: the flagship red-review fairness case
     selectProject("SYN-CON-005");

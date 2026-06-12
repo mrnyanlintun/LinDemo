@@ -15,7 +15,7 @@ The **radar scope is the interface**, not decoration:
 
 - **Distance from center** = drift from baseline (healthy projects sit near
   center; deteriorating ones drift toward the red rim).
-- **Angle** = delivery sector (Design / Construction / Combined).
+- **Angle** = delivery sector (Design / Construction / Hybrid).
 - **Blip color** = derived health state (Green / Amber / Red-review).
 
 Select any project (on the scope or in the equivalent list) to see:
@@ -40,18 +40,20 @@ explicit, readable rules — not model output and not informal judgment.
 
 ## Pages & features
 
-- **Radar console** — the scope, signal ledger, decision card, and decision log.
+- **Portfolio** — the radar scope, signal ledger, decision card, and decision log.
+- **Project Detail** — click any blip or list row to drill into one project: its ledger,
+  decision card, and all five modules computed for that project alone.
 - **Modules** — the five PCEIF modules (Hybrid Dynamic Simulation, SPC/CUSUM,
   Document-Risk Extraction, Signal Synthesis, and the ABM governance layer),
   each with a plain-language explanation, the rule that fired, and an
   **illustrative** graph of the synthetic data. Module 05 calls the same
   `decision.js` functions that drive the decision card — the rules are never
   duplicated.
-- **Ingest** — create a synthetic project (client-side, persisted in
+- **Manage Projects** — create a synthetic project (client-side, persisted in
   localStorage) or run visible keyword-rule extraction on pasted/uploaded text.
   Proposed signal deltas require human Approve/Reject; every event is logged.
-- **Projects** — active/archived lifecycle. Archive removes a project from the
-  radar and active views (recoverable, persisted, logged); Restore brings it back.
+  Also hosts the active/archived lifecycle: Archive removes a project from the
+  portfolio (recoverable, persisted, logged); Restore brings it back.
 - **Knowledge** — the curated method library and term lens. The floating
   **Lin Guide** assistant (bottom-right, every page) is a scripted helper that
   answers only from this library — it is not a live AI and makes no API calls.

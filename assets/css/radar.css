@@ -298,13 +298,13 @@ body[data-theme="schematic"] .theme-switch button.active { color: #10131a; }
 
 .rationale-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
 .rationale-label .req { font-weight: 400; color: var(--faint); font-size: 12px; }
-#rationale {
+.rationale {
   width: 100%; min-height: 80px; resize: vertical;
   font-family: var(--font-body); font-size: 14px; color: var(--text);
   background: var(--surface-soft); border: 1px solid var(--line);
   border-radius: var(--radius-md); padding: 10px 12px;
 }
-#rationale:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 1px; }
+.rationale:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 1px; }
 
 .dc-actions { display: flex; gap: 10px; margin: 14px 0 10px; flex-wrap: wrap; }
 .btn {
@@ -388,6 +388,19 @@ body[data-theme="schematic"] .nav-rail button.active { color: #10131a; }
   .nav-rail button span { display: none; }   /* icons only at ~360px */
   .nav-rail button { padding: 9px 11px; }
 }
+
+/* ---------- project detail (drill-down) ---------- */
+.detail-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin: 8px 0 18px; }
+.detail-back { flex: 0 0 auto; }
+.detail-id h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(20px,2.6vw,30px); margin: 0 0 6px; letter-spacing: -.01em; }
+.detail-id h1 .mod-mono { color: var(--eyebrow); font-weight: 600; font-size: .8em; }
+.detail-meta { font-size: 13px; color: var(--muted); margin: 0; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-bottom: 18px; }
+@media (max-width: 940px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-mods-h { font-family: var(--font-display); font-size: 17px; margin: 4px 0 12px; }
+
+/* ---------- manage projects rows ---------- */
+.pr-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
 /* ---------- projects page (archive) ---------- */
 .pr-row {
