@@ -94,6 +94,9 @@ function doPost(e) {
     } else if (action === 'archiveproject') {
       var body = JSON.parse(e.postData.contents);
       return output_(archiveProject_(rootId, body), null);
+    } else if (action === 'chat') {
+      var body = JSON.parse(e.postData.contents);
+      return output_(chatProject_(rootId, body), null);
     } else {
       payload = errorPayload_('Unknown POST action: ' + action, action);
     }
@@ -167,7 +170,8 @@ function getHealth_(rootId) {
       '?action=definitions',
       'POST ?action=update (body: projectCode, cpi, spi, bacM, p50EacM, p80EacM, posteriorRisk, cusum, flaggedRfis, conflicts, health, status)',
       'POST ?action=createProject',
-      'POST ?action=archiveProject'
+      'POST ?action=archiveProject',
+      'POST ?action=chat'
     ]
   });
 }
@@ -906,6 +910,73 @@ function archiveProject_(rootId, body) {
     reason: reason,
     timestamp: new Date().toISOString()
   };
+}
+
+function chatProject_(rootId, body) {
+  var question = body.question;
+  var projectCode = body.projectCode || null;
+  if (!question) return { ok: false, error: 'question is required' };
+
+  var apiKey = PropertiesService.getScriptProperties()
+    .getProperty('GEMINI_API_KEY');
+  if (!apiKey) return { ok: false, error: 'GEMINI_API_KEY not set' };
+
+  var context = '';
+  if (projectCode) {
+    var p = findRosterProject_(projectCode);
+    if (p) context = 'Project context:\n' + JSON.stringify(p, null, 2);
+  } else {
+    var summary = {
+      totalProjects: LIN_ROSTER.length,
+      projects: LIN_ROSTER.map(function(p) {
+        return {
+          code: p.code, name: p.projectName, type: p.type,
+          status: p.status, health: p.health, cpi: p.cpi,
+          spi: p.spi, bacM: p.bacM, p50EacM: p.p50EacM,
+          p80EacM: p.p80EacM, posteriorRisk: p.posteriorRisk,
+          flaggedRfis: p.flaggedRfis, conflicts: p.conflicts
+        };
+      })
+    };
+    context = 'Portfolio context:\n' + JSON.stringify(summary, null, 2);
+  }
+
+  var prompt = 'You are Lin, an AI project controls assistant for ' +
+    'a public capital program portfolio. Answer concisely and ' +
+    'accurately based only on the provided context. If the answer ' +
+    'is not in the context, say so.\n\n' + context +
+    '\n\nQuestion: ' + question;
+
+  var response = UrlFetchApp.fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+    'gemini-1.5-flash:generateContent?key=' + apiKey,
+    {
+      method: 'POST',
+      contentType: 'application/json',
+      payload: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 512 }
+      }),
+      muteHttpExceptions: true
+    }
+  );
+
+  if (response.getResponseCode() !== 200) {
+    return { ok: false, error: 'Gemini error ' + response.getResponseCode() +
+      ': ' + response.getContentText().substring(0,200) };
+  }
+
+  try {
+    var result = JSON.parse(response.getContentText());
+    var answer = result.candidates[0].content.parts[0].text;
+    return {
+      ok: true, question: question, answer: answer,
+      projectCode: projectCode || 'portfolio',
+      timestamp: new Date().toISOString()
+    };
+  } catch(e) {
+    return { ok: false, error: 'Parse error: ' + e.message };
+  }
 }
 
 function output_(payload, callback) {
