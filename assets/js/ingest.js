@@ -15,6 +15,11 @@
 
   const STORE_PROJECTS = "lin-user-projects";
   const STORE_LOG = "lin-ingest-log";
+  const STORE_ARCHIVED = "lin-archived-ids";
+
+  /* Archived projects live here (out of LIN_PROJECTS, so they are off the
+     radar and all active views) but remain fully recoverable. */
+  window.LIN_ARCHIVED = [];
 
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -57,12 +62,44 @@
     try { localStorage.setItem(STORE_LOG, JSON.stringify(ingestLog.slice(0, 80))); } catch (e) {}
   }
 
-  /* Merge persisted user projects into the in-memory portfolio at load */
+  function loadArchivedIds() {
+    try { return JSON.parse(localStorage.getItem(STORE_ARCHIVED) || "[]"); } catch (e) { return []; }
+  }
+  function saveArchivedIds() {
+    try { localStorage.setItem(STORE_ARCHIVED, JSON.stringify(LIN_ARCHIVED.map((p) => p.id))); } catch (e) {}
+  }
+
+  /* Merge persisted user projects into the in-memory portfolio at load,
+     then pull archived projects out of the active list. */
   function mergeUserProjects() {
     loadUserProjects().forEach((saved) => {
       const i = LIN_PROJECTS.findIndex((p) => p.id === saved.id);
       if (i >= 0) LIN_PROJECTS[i] = saved; else LIN_PROJECTS.push(saved);
     });
+    loadArchivedIds().forEach((id) => {
+      const i = LIN_PROJECTS.findIndex((p) => p.id === id);
+      if (i >= 0) LIN_ARCHIVED.push(LIN_PROJECTS.splice(i, 1)[0]);
+    });
+  }
+
+  /* ---------- archive / restore ---------- */
+
+  function archiveProject(id) {
+    const i = LIN_PROJECTS.findIndex((p) => p.id === id);
+    if (i < 0) return;
+    LIN_ARCHIVED.push(LIN_PROJECTS.splice(i, 1)[0]);
+    saveArchivedIds();
+    logEvent(`ARCHIVED project ${id}. Removed from radar and active views; recoverable on the Projects page.`);
+    if (window.LinApp) LinApp.refresh();
+  }
+
+  function restoreProject(id) {
+    const i = LIN_ARCHIVED.findIndex((p) => p.id === id);
+    if (i < 0) return;
+    LIN_PROJECTS.push(LIN_ARCHIVED.splice(i, 1)[0]);
+    saveArchivedIds();
+    logEvent(`RESTORED project ${id} from archive. Back on the radar and in active views.`);
+    if (window.LinApp) LinApp.refresh();
   }
 
   /* ---------- create project ---------- */
@@ -300,5 +337,54 @@
     });
   }
 
-  window.LinIngest = { mergeUserProjects, renderIngestPage, INGEST_RULES };
+  /* ---------- projects page (active + archived, archive on the project) ---------- */
+
+  function renderProjectsPage() {
+    const root = document.getElementById("projects-root");
+    if (!root) return;
+
+    const stateOf = (p) => deriveHealthState(p);
+    const activeRows = LIN_PROJECTS.map((p) => {
+      const state = stateOf(p);
+      return `<div class="pr-row">
+        <span class="pr-code">${esc(p.id)}</span>
+        <span class="pr-name">${esc(p.name)}</span>
+        <span class="li-state state-${state.toLowerCase().replace("-review", "")}">${esc(state)}</span>
+        <button class="btn small" data-archive="${esc(p.id)}">Archive</button>
+      </div>`;
+    }).join("");
+
+    const archivedRows = LIN_ARCHIVED.map((p) =>
+      `<div class="pr-row">
+        <span class="pr-code">${esc(p.id)}</span>
+        <span class="pr-name">${esc(p.name)}</span>
+        <span class="pr-code">archived</span>
+        <button class="btn small" data-restore="${esc(p.id)}">Restore</button>
+      </div>`).join("");
+
+    root.innerHTML =
+      `<div class="kn-grid">
+        <section class="panel">
+          <p class="eyebrow">Active (${LIN_PROJECTS.length})</p>
+          ${activeRows || `<p class="pr-empty">No active projects.</p>`}
+        </section>
+        <section class="panel">
+          <p class="eyebrow">Archived (${LIN_ARCHIVED.length})</p>
+          ${archivedRows || `<p class="pr-empty">Nothing archived. Archive keeps a project recoverable while removing it from the radar.</p>`}
+        </section>
+      </div>
+      <section class="panel" style="margin-top:18px">
+        <p class="eyebrow">Project event log</p>
+        <div id="ingest-log"></div>
+      </section>`;
+
+    renderLog();
+
+    root.querySelectorAll("[data-archive]").forEach((b) =>
+      b.addEventListener("click", () => { archiveProject(b.dataset.archive); renderProjectsPage(); }));
+    root.querySelectorAll("[data-restore]").forEach((b) =>
+      b.addEventListener("click", () => { restoreProject(b.dataset.restore); renderProjectsPage(); }));
+  }
+
+  window.LinIngest = { mergeUserProjects, renderIngestPage, renderProjectsPage, INGEST_RULES };
 })();

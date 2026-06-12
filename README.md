@@ -47,9 +47,11 @@ explicit, readable rules — not model output and not informal judgment.
   **illustrative** graph of the synthetic data. Module 05 calls the same
   `decision.js` functions that drive the decision card — the rules are never
   duplicated.
-- **Ingest & Projects** — create a synthetic project (client-side, persisted in
+- **Ingest** — create a synthetic project (client-side, persisted in
   localStorage) or run visible keyword-rule extraction on pasted/uploaded text.
   Proposed signal deltas require human Approve/Reject; every event is logged.
+- **Projects** — active/archived lifecycle. Archive removes a project from the
+  radar and active views (recoverable, persisted, logged); Restore brings it back.
 - **Knowledge** — the curated method library and term lens. The floating
   **Lin Guide** assistant (bottom-right, every page) is a scripted helper that
   answers only from this library — it is not a live AI and makes no API calls.
@@ -59,8 +61,9 @@ explicit, readable rules — not model output and not informal judgment.
 ## Themes
 
 Three visual systems over the same structure, switchable in the top bar:
-**Clean** (audit matrix, default), **Aviation** (blueprint), **Digital Twin**
-(industrial). Theme preference persists in `localStorage`.
+**Light** (audit matrix, default), **Console** (blueprint), **Schematic**
+(industrial). Theme preference persists in `localStorage` (older stored values
+migrate automatically).
 
 ## Boundaries
 

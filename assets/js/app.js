@@ -116,11 +116,56 @@
       svg.appendChild(sweep);
     }
 
-    // blips
-    LIN_PROJECTS.forEach((p) => {
+    // blips — two passes:
+    //   pass 1: dot positions, with a small static radius jitter when two
+    //           dots nearly coincide (clamped inside the original zone band
+    //           so distance still means drift);
+    //   pass 2: label positions, nudged apart vertically when they collide,
+    //           with thin leader lines back to the dot when nudged.
+    const BAND_EDGES = [R_MIN - 6, 0.30 * 180, 0.55 * 180, 0.80 * 180, R_MAX + 2];
+
+    const plots = LIN_PROJECTS.map((p) => {
       const ang = hashAngle(p);
-      const r = healthToRadius(p.health);
-      const pos = polar(ang, r);
+      return { p, ang, r: healthToRadius(p.health) };
+    });
+
+    // pass 1: dot collision jitter (static, deterministic by list order)
+    const placedDots = [];
+    plots.forEach((q) => {
+      let pos = polar(q.ang, q.r);
+      const lo = Math.max(...BAND_EDGES.filter((e) => e < q.r)) + 3;
+      const hi = Math.min(...BAND_EDGES.filter((e) => e >= q.r)) - 3;
+      let tries = 0;
+      while (placedDots.some((d) => Math.hypot(d.x - pos.x, d.y - pos.y) < 12) && tries < 8) {
+        tries++;
+        const dir = tries % 2 ? 1 : -1;
+        const r2 = Math.min(hi, Math.max(lo, q.r + dir * 6 * Math.ceil(tries / 2)));
+        pos = polar(q.ang, r2);
+      }
+      q.x = pos.x; q.y = pos.y;
+      placedDots.push(pos);
+    });
+
+    // pass 2: label collision avoidance (sorted vertical sweep)
+    const LABEL_W = 58, LABEL_H = 11;
+    plots.forEach((q) => { q.lx = q.x + 13; q.ly = q.y + 4; });
+    const byY = plots.slice().sort((a, b) => a.ly - b.ly);
+    byY.forEach((q, i) => {
+      let moved = true, guard = 0;
+      while (moved && guard < 20) {
+        moved = false; guard++;
+        for (let j = 0; j < i; j++) {
+          const o = byY[j];
+          if (Math.abs(o.lx - q.lx) < LABEL_W && Math.abs(o.ly - q.ly) < LABEL_H) {
+            q.ly = o.ly + LABEL_H;
+            moved = true;
+          }
+        }
+      }
+    });
+
+    plots.forEach((q) => {
+      const p = q.p;
       const g = el("g", {
         class: "blip",
         tabindex: "0",
@@ -135,16 +180,22 @@
         status === "amber" ? STATUS_COLOR.amber : STATUS_COLOR.red;
 
       const ring = el("circle", {
-        cx: pos.x, cy: pos.y, r: 11, fill: "none",
+        cx: q.x, cy: q.y, r: 11, fill: "none",
         stroke: "var(--phosphor)", "stroke-width": "2",
         class: "blip-ring", opacity: "0"
       });
       const dot = el("circle", {
-        cx: pos.x, cy: pos.y, r: 6, fill: color, class: "blip-dot"
+        cx: q.x, cy: q.y, r: 6, fill: color, class: "blip-dot"
       });
-      const label = el("text", {
-        x: pos.x + 13, y: pos.y + 4, class: "blip-label"
-      });
+
+      // leader line when the label was nudged away from its natural spot
+      if (Math.abs(q.ly - (q.y + 4)) > 5) {
+        g.appendChild(el("line", {
+          x1: q.x + 7, y1: q.y, x2: q.lx - 2, y2: q.ly - 3, class: "blip-leader"
+        }));
+      }
+
+      const label = el("text", { x: q.lx, y: q.ly, class: "blip-label" });
       label.textContent = p.id;
 
       g.appendChild(ring);
@@ -156,6 +207,13 @@
       g.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); }
       });
+      // hover/focus: emphasize label and re-append so it paints on top
+      const raise = () => { g.classList.add("hot"); svg.appendChild(g); };
+      const lower = () => { g.classList.remove("hot"); };
+      g.addEventListener("mouseenter", raise);
+      g.addEventListener("mouseleave", lower);
+      g.addEventListener("focus", raise);
+      g.addEventListener("blur", lower);
 
       svg.appendChild(g);
     });
@@ -420,6 +478,7 @@
     if (page === "modules" && window.LinModules) LinModules.renderModulesPage();
     if (page === "knowledge" && window.LinKnowledge) LinKnowledge.renderKnowledgePage();
     if (page === "ingest" && window.LinIngest) LinIngest.renderIngestPage();
+    if (page === "projects" && window.LinIngest) LinIngest.renderProjectsPage();
     window.scrollTo({ top: 0 });
   }
 
@@ -430,7 +489,13 @@
 
   /* ---------- public API (used by ingest.js) ---------- */
   window.LinApp = {
-    refresh() { buildRadar(); buildFallbackList(); },
+    refresh() {
+      buildRadar(); buildFallbackList();
+      // if the selected project was archived, fall back to the first active one
+      if (selectedId && !LIN_PROJECTS.some((p) => p.id === selectedId) && LIN_PROJECTS.length) {
+        selectProject(LIN_PROJECTS[0].id);
+      }
+    },
     selectProject(id) { showPage("radar"); selectProject(id); }
   };
 
@@ -439,8 +504,12 @@
     document.querySelectorAll("[data-set-theme]").forEach((b) =>
       b.addEventListener("click", () => applyTheme(b.dataset.setTheme))
     );
-    let saved = "clean";
-    try { saved = localStorage.getItem("lin-radar-theme") || "clean"; } catch (e) {}
+    // theme rename migration: clean→light, aviation→console, twin→schematic
+    const THEME_MIGRATE = { clean: "light", aviation: "console", twin: "schematic" };
+    let saved = "light";
+    try { saved = localStorage.getItem("lin-radar-theme") || "light"; } catch (e) {}
+    if (THEME_MIGRATE[saved]) saved = THEME_MIGRATE[saved];
+    if (!["light", "console", "schematic"].includes(saved)) saved = "light";
     applyTheme(saved);
 
     // merge user-created projects (localStorage) before first render

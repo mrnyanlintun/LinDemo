@@ -96,7 +96,13 @@
       id: "create",
       keywords: ["create project", "new project", "add project", "generate"],
       title: "Creating a project",
-      body: "On the Ingest & Projects page, set a name and delivery type (Design / Construction / Combined). The app generates the next SYN code, seeds baseline synthetic signals, runs the project through the same decision.js rules, and plots it on the radar immediately. Created projects persist in your browser's localStorage and are synthetic like everything else here."
+      body: "On the Ingest page, set a name and delivery type (Design / Construction / Combined). The app generates the next SYN code, seeds baseline synthetic signals, runs the project through the same decision.js rules, and plots it on the radar immediately. Created projects persist in your browser's localStorage and are synthetic like everything else here."
+    },
+    {
+      id: "archive",
+      keywords: ["archive", "archived", "restore", "unarchive", "remove project", "hide project"],
+      title: "Archiving a project",
+      body: "On the Projects page, each active project has an Archive action. Archiving removes it from the radar and all active views without deleting it — it moves to the Archived list, persists in localStorage, and can be restored with one click. Every archive and restore is logged in the project event log."
     },
     {
       id: "ingest",
@@ -106,9 +112,9 @@
     },
     {
       id: "themes",
-      keywords: ["theme", "clean", "aviation", "digital twin", "dark", "light", "appearance"],
+      keywords: ["theme", "light", "console", "schematic", "dark", "appearance"],
       title: "Themes",
-      body: "Three visual systems over the same structure — Clean (default), Aviation, and Digital Twin — switchable in the top bar. Your choice persists in localStorage."
+      body: "Three visual systems over the same structure — Light (default), Console, and Schematic — switchable in the top bar. Your choice persists in localStorage."
     },
     {
       id: "timezone",
