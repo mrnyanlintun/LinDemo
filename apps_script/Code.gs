@@ -73,6 +73,11 @@ var LIN_ROSTER = [
   { code: 'SYN-CMB-012', projectName: 'Passenger Processing Hall Renewal', type: 'Combined', status: 'GREEN', health: 92, cpi: 1.03, spi: 1.00, bacM: 122.7, p50EacM: 119.126, p80EacM: 122.128, posteriorRisk: 0.21, cusum: 1.2, flaggedRfis: 1, conflicts: 0 }
 ];
 
+function doOptions(e) {
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
 function doPost(e) {
   var params = e && e.parameter ? e.parameter : {};
   var action = String(params.action || '').toLowerCase();
@@ -986,7 +991,6 @@ function output_(payload, callback) {
       .createTextOutput(safeCallback + '(' + json + ');')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
-
   return ContentService
     .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
