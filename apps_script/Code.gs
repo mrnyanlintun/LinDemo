@@ -918,8 +918,8 @@ function chatProject_(rootId, body) {
   if (!question) return { ok: false, error: 'question is required' };
 
   var apiKey = PropertiesService.getScriptProperties()
-    .getProperty('GEMINI_API_KEY');
-  if (!apiKey) return { ok: false, error: 'GEMINI_API_KEY not set' };
+    .getProperty('GROQ_API_KEY');
+  if (!apiKey) return { ok: false, error: 'GROQ_API_KEY not set' };
 
   var context = '';
   if (projectCode) {
@@ -941,34 +941,33 @@ function chatProject_(rootId, body) {
     context = 'Portfolio context:\n' + JSON.stringify(summary, null, 2);
   }
 
-  var prompt = 'You are Lin, an AI project controls assistant for ' +
-    'a public capital program portfolio. Answer concisely and ' +
-    'accurately based only on the provided context. If the answer ' +
-    'is not in the context, say so.\n\n' + context +
-    '\n\nQuestion: ' + question;
-
   var response = UrlFetchApp.fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/' +
-    'gemini-2.0-flash:generateContent?key=' + apiKey,
+    'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
       contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + apiKey },
       payload: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 512 }
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'You are Lin, an AI project controls assistant for a public capital program portfolio. Answer concisely and accurately based only on the provided context. If the answer is not in the context, say so.' },
+          { role: 'user', content: context + '\n\nQuestion: ' + question }
+        ],
+        temperature: 0.2,
+        max_tokens: 512
       }),
       muteHttpExceptions: true
     }
   );
 
   if (response.getResponseCode() !== 200) {
-    return { ok: false, error: 'Gemini error ' + response.getResponseCode() +
+    return { ok: false, error: 'Groq error ' + response.getResponseCode() +
       ': ' + response.getContentText().substring(0,200) };
   }
 
   try {
     var result = JSON.parse(response.getContentText());
-    var answer = result.candidates[0].content.parts[0].text;
+    var answer = result.choices[0].message.content;
     return {
       ok: true, question: question, answer: answer,
       projectCode: projectCode || 'portfolio',
