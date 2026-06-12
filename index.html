@@ -155,13 +155,13 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
     <nav>
       <button class="nav-btn active" data-page="portfolio" title="Portfolio"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-7M20 16v-2"/></svg></span><span class="btn-label">Portfolio</span></button>
       <button class="nav-btn" data-page="detail" title="Deep Dive"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 8v4l3 2M3 12h3M18 12h3"/></svg></span><span class="btn-label">Deep Dive</span></button>
-      <button class="nav-btn" data-page="documents" title="Folder Sync"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg></span><span class="btn-label">Folder Sync</span></button>
+      <button class="nav-btn" data-page="documents" title="Sync &amp; Ingest"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg></span><span class="btn-label">Sync &amp; Ingest</span></button>
       <button class="nav-btn" data-page="governance" title="Governance"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.7-2.8 8.2-7 10-4.2-1.8-7-5.3-7-10V6l7-3Z"/><path d="M9 12l2 2 4-5"/></svg></span><span class="btn-label">Governance</span></button>
 
       <button class="nav-btn" data-page="definitions" title="Definitions"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M4 5h7a4 4 0 0 1 4 4v10H8a4 4 0 0 0-4 4V5Z"/><path d="M20 5h-5a4 4 0 0 0-4 4v10h5a4 4 0 0 1 4 4V5Z"/><path d="M8 9h3M8 13h3M15 9h2"/></svg></span><span class="btn-label">Lookup</span></button>
 
-      <button class="nav-btn" data-page="ingest" title="Ingest"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="btn-label">Ingest</span></button>
-      <button class="nav-btn" data-page="projects"><span>07</span> Projects</button>
+<button class="nav-btn" data-page="projects"><span style="font-size:1rem;font-weight:900;line-height:1;">+</span><span class="btn-label">New Project</span></button>
+      <button class="nav-btn" data-page="chat"><span>💬</span> Lin Chat</button>
       <button id="themeToggle" class="nav-btn theme-toggle" type="button" aria-pressed="false" title="Switch to light theme"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><span class="btn-label">Light</span></button>
     </nav>
 
@@ -171,8 +171,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
         <div class="control-row"><input id="searchBox" class="search-box" type="search" placeholder="Search project, agency, folder, or status"/><select id="sortBox" class="select-box"><option value="risk">Sort: Highest Risk First</option><option value="health">Sort: Health Score</option><option value="eac">Sort: EAC Exposure</option><option value="name">Sort: Project Name</option></select><button id="refreshTelemetry" class="action-btn primary" title="Refresh"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8"/></svg></span><span class="btn-label">Refresh</span></button></div>
         <div class="filter-row"><button class="mini-btn active" data-filter="ALL">All</button><button class="mini-btn" data-filter="GREEN">Green</button><button class="mini-btn" data-filter="AMBER">Amber</button><button class="mini-btn" data-filter="RED">Red</button><button id="notificationToggle" class="mini-btn notification-toggle" type="button" aria-pressed="true" title="Toggle red notification flash"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M10 21h4"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M12 3V1"/></svg></span><span class="btn-label">Notification On</span></button></div><div class="filter-row type-filter-row"><button class="mini-btn active" data-type-filter="ALL">All Types</button><button class="mini-btn" data-type-filter="DESIGN">Design</button><button class="mini-btn" data-type-filter="CONSTRUCTION">Construction</button><button class="mini-btn" data-type-filter="COMBINED">Combined</button></div>
         <div class="status-legend" aria-label="Status color legend"><span class="status-key" style="--legend-color:var(--green)"><i></i>Green: normal watch</span><span class="status-key" style="--legend-color:var(--amber)"><i></i>Amber: attention required</span><span class="status-key" style="--legend-color:var(--red)"><i></i>Red: urgent escalation</span></div>
-        <div class="portfolio-grid" id="projectGrid"></div>
-        <div class="panel" id="portfolioSummaryTable" style="margin-top:18px;">
+        <div class="panel" id="portfolioSummaryTable" style="margin-bottom:18px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <p class="eyebrow" style="margin:0">Portfolio Summary</p>
             <span class="sync-pill" id="summarySyncPill">Loading...</span>
@@ -189,18 +188,23 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
             </div>
           </div>
         </div>
+        <div class="portfolio-grid" id="projectGrid"></div>
       </section>
 
       <section id="detail" class="page">
-        <div class="detail-hero"><div class="panel hero-gauge"><div id="heroGauge" class="gauge" style="--pct:0;--gcolor:var(--red);color:var(--red)"><span class="ring"></span><div class="value"><b id="heroState">RED</b><span>Lin State</span></div></div></div><div class="panel hero-text"><div class="breadcrumbs"><a class="back-link" data-page="portfolio">Portfolio</a> / <span id="detailCode">LIN-CHS-002</span> / Deep Dive</div><h2 id="detailTitle">CHS Terminal MEP Fit-Out & Commissioning</h2><p id="detailNarrative"></p><div class="signal-dots" id="detailSignals"></div><div class="kpi-strip" id="detailKpis"></div><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button id="runSynthesis" class="action-btn primary" title="Synthesize"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12l8-6M8 12l8 6"/></svg></span><span class="btn-label">Synthesize</span></button><button class="action-btn" data-page="governance" title="Decision Card"><span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="btn-label">Decision</span></button><button id="archiveProjectBtn" class="action-btn" title="Archive this project" style="border-color:rgba(255,203,69,.52);color:var(--amber)"><span class="btn-icon" style="border-color:rgba(255,203,69,.45);color:var(--amber)"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></span><span class="btn-label">Archive</span></button></div><div id="archiveConfirmBar" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(255,203,69,.40);background:rgba(255,203,69,.06);font:800 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--amber);display:none;align-items:center;gap:10px"><span id="archiveConfirmMsg"></span><button id="archiveConfirmYes" class="mini-btn" style="border-color:rgba(255,203,69,.72);color:var(--amber);min-width:0;padding:6px 10px">Confirm</button><button id="archiveConfirmNo" class="mini-btn" style="min-width:0;padding:6px 10px">Cancel</button></div></div></div>
-        <div class="panel" style="margin-bottom:18px;">
-          <p class="eyebrow" style="margin:0 0 16px">Module Signal Radar</p>
-          <div style="display:flex;justify-content:center;align-items:center;height:280px;">
-            <canvas id="moduleRadarChart" width="280" height="280"></canvas>
+        <div class="panel hero-text" style="margin-bottom:18px;"><div class="breadcrumbs"><a class="back-link" data-page="portfolio">Portfolio</a> / <span id="detailCode">LIN-CHS-002</span> / Deep Dive</div><h2 id="detailTitle">CHS Terminal MEP Fit-Out & Commissioning</h2><p id="detailNarrative"></p><div class="signal-dots" id="detailSignals"></div><div class="kpi-strip" id="detailKpis"></div></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px;"><button id="runSynthesis" class="action-btn primary" title="Synthesize"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12l8-6M8 12l8 6"/></svg></span><span class="btn-label">Synthesize</span></button><button class="action-btn" data-page="governance" title="Decision Card"><span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="btn-label">Decision</span></button><button id="archiveProjectBtn" class="action-btn" title="Archive this project" style="border-color:rgba(255,203,69,.52);color:var(--amber)"><span class="btn-icon" style="border-color:rgba(255,203,69,.45);color:var(--amber)"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></span><span class="btn-label">Archive</span></button><div id="archiveConfirmBar" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(255,203,69,.40);background:rgba(255,203,69,.06);font:800 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--amber);display:none;align-items:center;gap:10px"><span id="archiveConfirmMsg"></span><button id="archiveConfirmYes" class="mini-btn" style="border-color:rgba(255,203,69,.72);color:var(--amber);min-width:0;padding:6px 10px">Confirm</button><button id="archiveConfirmNo" class="mini-btn" style="min-width:0;padding:6px 10px">Cancel</button></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+          <div class="detail-hero panel hero-gauge"><div id="heroGauge" class="gauge" style="--pct:0;--gcolor:var(--red);color:var(--red)"><span class="ring"></span><div class="value"><b id="heroState">RED</b><span>Lin State</span></div></div></div>
+          <div class="panel">
+            <p class="eyebrow" style="margin:0 0 16px">Module Signal Radar</p>
+            <div style="display:flex;justify-content:center;align-items:center;height:280px;">
+              <canvas id="moduleRadarChart" width="280" height="280"></canvas>
+            </div>
+            <p class="fine-print" style="text-align:center;margin-top:8px;">
+              EVM · Bayesian Risk · Anomaly Detection · Document Risk
+            </p>
           </div>
-          <p class="fine-print" style="text-align:center;margin-top:8px;">
-            EVM · Bayesian Risk · Anomaly Detection · Document Risk
-          </p>
         </div>
         <div class="module-grid">
           <div class="panel">
@@ -231,7 +235,12 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
       </section>
 
       <section id="documents" class="page">
-        <div class="section-title"><div><h2>Cloud Folder Sync & Project Record Refresh</h2><p>Lin refreshes a synthetic cloud-folder index structured around three project-management archetypes: design-only, construction-only, and combined design + construction administration. Each archetype stages the files needed for EVM, schedule, document-risk extraction, anomaly simulation, signal synthesis, and governance recommendation logic.</p></div><div class="timestamp" id="driveTimestamp">Input Mode: Cloud Folder Index</div></div>
+        <div class="section-title"><div><h2>Cloud Folder Sync &amp; Project Record Refresh</h2><p>Lin refreshes a synthetic cloud-folder index structured around three project-management archetypes: design-only, construction-only, and combined design + construction administration. Each archetype stages the files needed for EVM, schedule, document-risk extraction, anomaly simulation, signal synthesis, and governance recommendation logic.</p></div><div class="timestamp" id="driveTimestamp">Input Mode: Cloud Folder Index</div></div>
+        <div style="display:flex;gap:8px;margin-bottom:18px;" id="syncIngestTabBar">
+          <button class="mini-btn active" id="tabSyncBtn" onclick="switchSyncTab('sync')">Cloud Sync</button>
+          <button class="mini-btn" id="tabIngestBtn" onclick="switchSyncTab('ingest')">Ingest</button>
+        </div>
+        <div id="syncTabWrap">
         <div class="data-page-grid">
           <div class="data-card"><h3>Cloud Folder Refresh</h3><p>The cloud-hosted demo can read a shared synthetic cloud folder or a published file index. The refresh simulates a project-management record that may be design-only, construction-only, or combined across design and construction administration.</p><div id="syncZone" class="sync-zone"><div><b>Refresh Synthetic Project Folder Index</b><span id="syncStatus">Ready to scan demo project-management folder archetypes.</span><button id="refreshDrive" class="action-btn primary" title="Refresh Index"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8"/></svg></span><span class="btn-label">Refresh Index</span></button></div></div><div class="sync-log" id="syncLog">[09:40:00] Cloud folder index idle. Waiting for refresh command.</div></div>
           <div class="data-card"><div class="panel-head"><div><h3>Detected Project Folders</h3><p>Select a folder to preview the project-management record that Lin will ingest.</p></div><select id="driveProjectSelect" class="select-box"></select></div><div class="folder-tree" id="folderTree"></div></div>
@@ -246,6 +255,29 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
           <div class="panel"><div class="panel-head"><div><h3>Audit Trail Export</h3><p>Download a synthetic audit-trail package for the selected folder refresh and signal run. The audit payload is exported on demand instead of displayed on screen.</p></div><span class="tag status-amber">Export</span></div><div class="decision-grid"><div class="decision-cell"><b>Selected Folder</b><span id="auditProjectLabel">No folder selected.</span></div><div class="decision-cell"><b>Export Contents</b><span>Refresh event, file manifest, project type, folder taxonomy, signal summary, simulation method, rule-set version, and human-review gate.</span></div></div><button id="downloadAuditTrail" class="action-btn primary" style="margin-top:16px" title="Download Audit Trails"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M5 20h14"/></svg></span><span class="btn-label">Audit Trails</span></button><div class="audit-log" id="auditExportStatus">Audit trail export is ready after folder refresh.</div></div>
         </div>
         <div class="panel" style="margin-top:18px"><div class="panel-head"><div><h3>Refreshed Document List</h3><p>Document list is refreshed from the selected project folder. The manifest changes based on whether the selected record is design-only, construction-only, or combined.</p></div><span class="tag">Cloud Index</span></div><table class="drive-table" id="driveTable"></table></div>
+        </div>
+        <div id="ingestTabWrap" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0">
+          <div class="panel">
+            <div class="panel-head"><div><h3>Upload Document</h3><p>Select a project, document type, and file to extract signals.</p></div></div>
+            <div style="margin-bottom:12px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Project</label><select id="ingestProjectSelect" class="select-box" style="width:100%"><option value="">— select project —</option><option value="SYN-DES-001">SYN-DES-001</option><option value="SYN-DES-002">SYN-DES-002</option><option value="SYN-DES-003">SYN-DES-003</option><option value="SYN-DES-004">SYN-DES-004</option><option value="SYN-CON-005">SYN-CON-005</option><option value="SYN-CON-006">SYN-CON-006</option><option value="SYN-CON-007">SYN-CON-007</option><option value="SYN-CON-008">SYN-CON-008</option><option value="SYN-CMB-009">SYN-CMB-009</option><option value="SYN-CMB-010">SYN-CMB-010</option><option value="SYN-CMB-011">SYN-CMB-011</option><option value="SYN-CMB-012">SYN-CMB-012</option></select></div>
+            <div style="margin-bottom:16px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Document Type</label><select id="ingestDocType" class="select-box" style="width:100%"><option value="">— select type —</option><option value="meeting_minutes">Meeting Minutes</option><option value="pay_application">Pay Application</option><option value="rfi_log">RFI Log</option><option value="submittal">Submittal</option><option value="contract_spec">Contract Specification</option><option value="proposed_submission">Proposed Submission</option></select></div>
+            <input id="ingestFileInput" type="file" accept=".pdf,.txt,.csv" style="display:none">
+            <div id="ingestDropZone" style="border:2px dashed rgba(0,229,255,.45);background:rgba(0,229,255,.04);padding:40px;text-align:center;cursor:pointer;clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);margin-bottom:14px;transition:.16s ease"><div style="color:var(--cyan2);font:900 13px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Drag and drop file here</div><div style="color:var(--muted);font:800 11px/1.4 var(--mono)">PDF, TXT, CSV supported</div></div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="ingestUploadBtn" class="action-btn primary"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>Extract Signals</button><span id="ingestFileName" style="color:var(--muted);font:800 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.8px"></span></div>
+          </div>
+          <div class="panel" id="ingestResultPanel" style="display:none">
+            <div class="panel-head"><div><h3>Extracted Signals</h3></div><span id="ingestRiskBadge" class="badge">—</span></div>
+            <div id="ingestDocSummary" style="color:var(--faint);font-size:13px;line-height:1.5;margin-bottom:14px"></div>
+            <ul id="ingestKeyFindings" style="margin:0 0 14px;padding:0 0 0 16px;color:var(--faint);font-size:13px;line-height:1.65"></ul>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px"><div class="kpi"><b id="ingestCpiDelta">—</b><span>CPI Delta</span></div><div class="kpi"><b id="ingestSpiDelta">—</b><span>SPI Delta</span></div><div class="kpi"><b id="ingestHealthDelta">—</b><span>Health Delta</span></div><div class="kpi"><b id="ingestRfiDelta">—</b><span>RFI Delta</span></div></div>
+            <div id="ingestProposedValues" style="border:1px solid rgba(0,229,255,.20);background:rgba(0,229,255,.04);padding:12px;margin-bottom:14px;font:800 12px/1.6 var(--mono);color:var(--faint)"></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><button id="ingestApproveBtn" class="action-btn primary" style="border-color:rgba(54,255,154,.72);color:var(--green)"><span class="btn-icon" style="border-color:rgba(54,255,154,.58);color:var(--green)"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-5"/><circle cx="12" cy="12" r="9"/></svg></span>Approve Update</button><button id="ingestRejectBtn" class="action-btn"><span class="btn-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Reject</button></div>
+            <p style="margin:0;color:var(--muted);font:800 10px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px">Advisory only. Human authority confirmation required before approval writes to audit trail.</p>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Ingestion Log</h3></div></div><pre id="ingestLog" class="sync-log" style="min-height:80px;white-space:pre-wrap;word-break:break-all">Ingestion log ready. Select a project and document to begin.</pre></div>
+        </div>
       </section>
 
       <section id="governance" class="page">
@@ -276,30 +308,6 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
         </div>
       </section>
 
-      <section id="ingest" class="page">
-        <div class="section-title"><div><div class="eyebrow" style="color:var(--buff);font:900 12px/1.25 var(--mono);text-transform:uppercase;letter-spacing:2.2px;margin-bottom:6px">06 Document Ingestion</div><h1 style="margin:0;font:850 34px/1.05 var(--sans);letter-spacing:-.045em">Signal Extraction Pipeline</h1></div></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0">
-          <div class="panel">
-            <div class="panel-head"><div><h3>Upload Document</h3><p>Select a project, document type, and file to extract signals.</p></div></div>
-            <div style="margin-bottom:12px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Project</label><select id="ingestProjectSelect" class="select-box" style="width:100%"><option value="">— select project —</option><option value="SYN-DES-001">SYN-DES-001</option><option value="SYN-DES-002">SYN-DES-002</option><option value="SYN-DES-003">SYN-DES-003</option><option value="SYN-DES-004">SYN-DES-004</option><option value="SYN-CON-005">SYN-CON-005</option><option value="SYN-CON-006">SYN-CON-006</option><option value="SYN-CON-007">SYN-CON-007</option><option value="SYN-CON-008">SYN-CON-008</option><option value="SYN-CMB-009">SYN-CMB-009</option><option value="SYN-CMB-010">SYN-CMB-010</option><option value="SYN-CMB-011">SYN-CMB-011</option><option value="SYN-CMB-012">SYN-CMB-012</option></select></div>
-            <div style="margin-bottom:16px"><label style="display:block;color:var(--muted);font:800 10px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Document Type</label><select id="ingestDocType" class="select-box" style="width:100%"><option value="">— select type —</option><option value="meeting_minutes">Meeting Minutes</option><option value="pay_application">Pay Application</option><option value="rfi_log">RFI Log</option><option value="submittal">Submittal</option><option value="contract_spec">Contract Specification</option><option value="proposed_submission">Proposed Submission</option></select></div>
-            <input id="ingestFileInput" type="file" accept=".pdf,.txt,.csv" style="display:none">
-            <div id="ingestDropZone" style="border:2px dashed rgba(0,229,255,.45);background:rgba(0,229,255,.04);padding:40px;text-align:center;cursor:pointer;clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);margin-bottom:14px;transition:.16s ease"><div style="color:var(--cyan2);font:900 13px/1 var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Drag and drop file here</div><div style="color:var(--muted);font:800 11px/1.4 var(--mono)">PDF, TXT, CSV supported</div></div>
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="ingestUploadBtn" class="action-btn primary"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>Extract Signals</button><span id="ingestFileName" style="color:var(--muted);font:800 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.8px"></span></div>
-          </div>
-          <div class="panel" id="ingestResultPanel" style="display:none">
-            <div class="panel-head"><div><h3>Extracted Signals</h3></div><span id="ingestRiskBadge" class="badge">—</span></div>
-            <div id="ingestDocSummary" style="color:var(--faint);font-size:13px;line-height:1.5;margin-bottom:14px"></div>
-            <ul id="ingestKeyFindings" style="margin:0 0 14px;padding:0 0 0 16px;color:var(--faint);font-size:13px;line-height:1.65"></ul>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px"><div class="kpi"><b id="ingestCpiDelta">—</b><span>CPI Delta</span></div><div class="kpi"><b id="ingestSpiDelta">—</b><span>SPI Delta</span></div><div class="kpi"><b id="ingestHealthDelta">—</b><span>Health Delta</span></div><div class="kpi"><b id="ingestRfiDelta">—</b><span>RFI Delta</span></div></div>
-            <div id="ingestProposedValues" style="border:1px solid rgba(0,229,255,.20);background:rgba(0,229,255,.04);padding:12px;margin-bottom:14px;font:800 12px/1.6 var(--mono);color:var(--faint)"></div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><button id="ingestApproveBtn" class="action-btn primary" style="border-color:rgba(54,255,154,.72);color:var(--green)"><span class="btn-icon" style="border-color:rgba(54,255,154,.58);color:var(--green)"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-5"/><circle cx="12" cy="12" r="9"/></svg></span>Approve Update</button><button id="ingestRejectBtn" class="action-btn"><span class="btn-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Reject</button></div>
-            <p style="margin:0;color:var(--muted);font:800 10px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.8px">Advisory only. Human authority confirmation required before approval writes to audit trail.</p>
-          </div>
-        </div>
-        <div class="panel"><div class="panel-head"><div><h3>Ingestion Log</h3></div></div><pre id="ingestLog" class="sync-log" style="min-height:80px;white-space:pre-wrap;word-break:break-all">Ingestion log ready. Select a project and document to begin.</pre></div>
-      </section>
-
       <section id="projects" class="page">
         <div class="section-title"><div><div class="eyebrow" style="color:var(--buff);font:900 12px/1.25 var(--mono);text-transform:uppercase;letter-spacing:2.2px;margin-bottom:6px">07 Project Management</div><h1 style="margin:0;font:850 34px/1.05 var(--sans);letter-spacing:-.045em">Create and Archive Projects</h1></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0">
@@ -321,6 +329,60 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
         <div class="panel" style="margin-top:0">
           <div class="panel-head"><div><h3>Project Management Log</h3></div></div>
           <pre id="projectsLog" class="sync-log" style="min-height:80px;white-space:pre-wrap;word-break:break-all">Project management log ready.</pre>
+        </div>
+      </section>
+
+      <section class="page" id="chat">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">Lin AI Chat</p>
+            <h1>Ask about your projects</h1>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <label style="font-size:0.75rem;color:#94a3b8;">Project filter</label>
+            <select id="chatProjectFilter" style="background:#0d1117;border:1px solid rgba(0,229,255,.25);color:#e2e8f0;padding:4px 8px;font-size:0.8rem;">
+              <option value="">All Projects</option>
+              <option value="SYN-DES-001">SYN-DES-001</option>
+              <option value="SYN-DES-002">SYN-DES-002</option>
+              <option value="SYN-DES-003">SYN-DES-003</option>
+              <option value="SYN-DES-004">SYN-DES-004</option>
+              <option value="SYN-CON-005">SYN-CON-005</option>
+              <option value="SYN-CON-006">SYN-CON-006</option>
+              <option value="SYN-CON-007">SYN-CON-007</option>
+              <option value="SYN-CON-008">SYN-CON-008</option>
+              <option value="SYN-CMB-009">SYN-CMB-009</option>
+              <option value="SYN-CMB-010">SYN-CMB-010</option>
+              <option value="SYN-CMB-011">SYN-CMB-011</option>
+              <option value="SYN-CMB-012">SYN-CMB-012</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel" style="display:flex;flex-direction:column;height:520px;">
+          <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
+            <div class="chat-msg-system" style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:8px;">
+              Lin is ready. Ask about any project or the full portfolio.
+            </div>
+          </div>
+          <div style="border-top:1px solid rgba(0,229,255,.12);padding:12px;display:flex;gap:8px;align-items:center;">
+            <input id="chatInput" type="text" placeholder="e.g. Which projects are red and why?"
+              style="flex:1;background:#0d1117;border:1px solid rgba(0,229,255,.25);color:#e2e8f0;padding:10px 14px;font-size:0.85rem;outline:none;"
+              onkeydown="if(event.key==='Enter')sendChatMessage()"/>
+            <button id="chatSendBtn" class="primary-action" onclick="sendChatMessage()">Send</button>
+            <button id="chatVoiceBtn"
+              style="background:transparent;border:1px solid rgba(0,229,255,.25);color:#00e5ff;padding:10px 14px;cursor:pointer;font-size:1rem;"
+              title="Voice input" onclick="toggleVoiceInput()">🎤</button>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:12px;">
+          <p class="eyebrow" style="margin:0 0 8px">Suggested Questions</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="chatSuggestions">
+            <button class="filter-chip" onclick="askSuggestion(this)">Which projects are RED?</button>
+            <button class="filter-chip" onclick="askSuggestion(this)">What is the highest P80 EAC exposure?</button>
+            <button class="filter-chip" onclick="askSuggestion(this)">Which projects need governance review?</button>
+            <button class="filter-chip" onclick="askSuggestion(this)">Summarize portfolio health</button>
+            <button class="filter-chip" onclick="askSuggestion(this)">Which project has most flagged RFIs?</button>
+            <button class="filter-chip" onclick="askSuggestion(this)">What is driving risk in RED projects?</button>
+          </div>
         </div>
       </section>
     </main>
@@ -488,7 +550,7 @@ ${constructionTree(p)}
     function renderDrivePanel(){const select=document.getElementById("driveProjectSelect");if(!select.options.length)select.innerHTML=projects.map(p=>`<option value="${p.code}">${p.code} // ${p.kind} // ${p.title}</option>`).join("");select.value=selected.code;const manifest=getProjectManifest(selected);document.getElementById("folderTree").textContent=buildFolderTree(selected);document.getElementById("driveTable").innerHTML=`<thead><tr><th>Type</th><th>Path</th><th>Size</th><th>Ingestion Note</th></tr></thead><tbody>${manifest.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td><td>${d[2]}</td><td>${d[3]}</td></tr>`).join("")}</tbody>`;document.getElementById("auditProjectLabel").textContent=`${selected.code} // ${selected.folder}`;document.getElementById("auditExportStatus").textContent=`Ready to export synthetic audit trail for ${selected.code}.`}
     function buildAuditTrail(p){return{audit_trail:"Lin synthetic cloud-folder demo",generated_at:new Date().toISOString(),project_code:p.code,project_name:p.title,source_folder_label:p.folder,cloud_refresh_event:{refreshed_by:"Lin Cloud Folder Index Adapter",input_mode:"Synthetic Cloud Folder Index",folder_count_detected:projects.length,file_count_detected:p.docs.length,synthetic_data:true},file_manifest:getProjectManifest(p).map(d=>({type:d[0],path:d[1],size:d[2],ingestion_note:d[3]})),folder_taxonomy:p.kind==="DESIGN"?"Design-only engineering project-management record":p.kind==="CONSTRUCTION"?"Construction administration project-management record":"Combined design + construction administration project-management record",project_type:p.kind,simulation_method:"Hybrid Monte Carlo + Bayesian updating + SPC/CUSUM anomaly simulation",signal_summary:{evm_signal:p.evmSignal,anomaly_signal:p.anomalySignal,document_signal:p.docSignal,synthesized_status:p.status,health_score:p.health,cpi:p.cpi,spi:p.spi,p80_eac_millions:p.p80,schedule_slip_days:p.slip,conflict_flag:p.conflicts,p80_eac_explainability:p80RiskFacts(p)},governance_review_gate:{rule_set:"L2-v0.4",prompt_version:"doc_risk_v0.4",human_review:"Required before decision-card release",decision_authority:"Human project authority required; no automated project direction."},demo_notice:"Synthetic academic demonstration only. Not an official project record."}}
     function downloadAuditTrail(){const stamp=new Date().toISOString().slice(0,19).replace(/[T:]/g,"-");const blob=new Blob([JSON.stringify(buildAuditTrail(selected),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=`lin_audit_trail_${selected.code}_${stamp}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);document.getElementById("auditExportStatus").textContent=`Downloaded audit trail package for ${selected.code}.`;toast(`Audit trail downloaded for ${selected.code}.`)}
-    function showPage(id){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.page===id));if(id==="documents")renderDrivePanel();if(id==="governance")renderGovernance(selected);if(id==="definitions")renderDefinitions();annotateTerms(document.getElementById(id));window.scrollTo({top:0,behavior:"smooth"})}
+    function showPage(id){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.page===id));if(id==="documents")renderDrivePanel();if(id==="documents"&&window.__lastSyncTab)switchSyncTab(window.__lastSyncTab);if(id==="governance")renderGovernance(selected);if(id==="definitions")renderDefinitions();annotateTerms(document.getElementById(id));window.scrollTo({top:0,behavior:"smooth"})}
 
     document.addEventListener('click',e=>{const t=e.target.closest('.term');if(t){e.preventDefault();e.stopPropagation();const r=t.getBoundingClientRect();showTermLens(t.dataset.term,r.left+r.width/2,r.bottom);return}const card=e.target.closest('[data-term-card]');if(card){showTermLens(card.dataset.termCard,e.clientX,e.clientY);return}if(!e.target.closest('.term-lens'))hideTermLens()});
     document.addEventListener('contextmenu',e=>{const t=e.target.closest('.term');if(t){e.preventDefault();e.stopPropagation();showTermLens(t.dataset.term,e.clientX,e.clientY)}});
@@ -659,6 +721,116 @@ ${constructionTree(p)}
       document.getElementById('summaryTopStable').innerHTML = topStable.map(projectRow).join('');
       var pill = document.getElementById('summarySyncPill');
       if (pill) pill.textContent = projects.length + ' projects loaded';
+    }
+
+    var __chatHistory = [];
+    var __voiceRecognition = null;
+    var __voiceActive = false;
+
+    function sendChatMessage() {
+      var input = document.getElementById('chatInput');
+      var question = input.value.trim();
+      if (!question) return;
+      var projectCode = document.getElementById('chatProjectFilter').value;
+      input.value = '';
+      appendChatMessage('user', question);
+      appendChatMessage('lin', '...');
+      var loadingMsg = document.getElementById('chatMessages').lastChild;
+      fetch(window.LIN_CONFIG.appsScriptApiUrl + '?action=chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question, projectCode: projectCode || null })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        loadingMsg.remove();
+        if (d.ok) {
+          appendChatMessage('lin', d.answer);
+          if (window.__voiceActive) speakAnswer(d.answer);
+        } else {
+          appendChatMessage('error', 'Error: ' + (d.error || 'unknown'));
+        }
+      })
+      .catch(function(err) {
+        loadingMsg.remove();
+        appendChatMessage('error', 'Request failed: ' + err.message);
+      });
+    }
+
+    function appendChatMessage(role, text) {
+      var container = document.getElementById('chatMessages');
+      var div = document.createElement('div');
+      div.style.cssText = 'max-width:85%;padding:10px 14px;font-size:0.85rem;line-height:1.5;';
+      if (role === 'user') {
+        div.style.cssText += 'align-self:flex-end;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:#e2e8f0;margin-left:auto;';
+      } else if (role === 'lin') {
+        div.style.cssText += 'align-self:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#e2e8f0;';
+        var label = document.createElement('div');
+        label.style.cssText = 'font-size:0.7rem;color:#00e5ff;letter-spacing:0.08em;margin-bottom:4px;';
+        label.textContent = 'LIN';
+        div.appendChild(label);
+      } else {
+        div.style.cssText += 'align-self:flex-start;color:#ef4444;font-size:0.8rem;';
+      }
+      var textNode = document.createElement('div');
+      textNode.textContent = text;
+      div.appendChild(textNode);
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function askSuggestion(btn) {
+      var input = document.getElementById('chatInput');
+      input.value = btn.textContent.trim();
+      sendChatMessage();
+    }
+
+    function toggleVoiceInput() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        appendChatMessage('error', 'Voice input not supported in this browser. Use Chrome.');
+        return;
+      }
+      if (__voiceActive) {
+        __voiceActive = false;
+        if (__voiceRecognition) __voiceRecognition.stop();
+        document.getElementById('chatVoiceBtn').style.color = '#00e5ff';
+        document.getElementById('chatVoiceBtn').style.borderColor = 'rgba(0,229,255,.25)';
+        return;
+      }
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      __voiceRecognition = new SR();
+      __voiceRecognition.continuous = false;
+      __voiceRecognition.interimResults = false;
+      __voiceRecognition.lang = 'en-US';
+      __voiceRecognition.onresult = function(event) {
+        var transcript = event.results[0][0].transcript;
+        document.getElementById('chatInput').value = transcript;
+        sendChatMessage();
+      };
+      __voiceRecognition.onerror = function(event) {
+        appendChatMessage('error', 'Voice error: ' + event.error);
+        __voiceActive = false;
+        document.getElementById('chatVoiceBtn').style.color = '#00e5ff';
+      };
+      __voiceRecognition.onend = function() {
+        __voiceActive = false;
+        document.getElementById('chatVoiceBtn').style.color = '#00e5ff';
+        document.getElementById('chatVoiceBtn').style.borderColor = 'rgba(0,229,255,.25)';
+      };
+      __voiceActive = true;
+      document.getElementById('chatVoiceBtn').style.color = '#ef4444';
+      document.getElementById('chatVoiceBtn').style.borderColor = '#ef4444';
+      __voiceRecognition.start();
+    }
+
+    function speakAnswer(text) {
+      if (!('speechSynthesis' in window)) return;
+      var short = text.substring(0, 300);
+      var utterance = new SpeechSynthesisUtterance(short);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 0.8;
+      window.speechSynthesis.speak(utterance);
     }
   </script>
   <script src="config.js"></script>
@@ -1180,5 +1352,207 @@ ${constructionTree(p)}
     });
   })();
   </script>
+<button id="chatFloatBtn" onclick="toggleChatPanel()"
+  title="Lin AI Chat"
+  style="position:fixed;bottom:28px;right:28px;z-index:1000;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,#00e5ff22,#0066ff33);
+  border:1px solid rgba(0,229,255,.6);cursor:pointer;
+  font-size:1.4rem;box-shadow:0 0 28px rgba(0,229,255,.45);
+  display:flex;align-items:center;justify-content:center;
+  color:#00e5ff;transition:.2s ease;">💬</button>
+
+<div id="chatFloatPanel"
+  style="position:fixed;bottom:94px;right:28px;z-index:999;
+  width:360px;height:500px;background:#020a10;
+  border:1px solid rgba(0,229,255,.28);display:none;
+  flex-direction:column;
+  clip-path:polygon(0 12px,12px 0,100% 0,
+  100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);
+  box-shadow:0 0 40px rgba(0,229,255,.18);">
+  <div style="padding:10px 14px;border-bottom:1px solid
+    rgba(0,229,255,.14);display:flex;
+    justify-content:space-between;align-items:center;
+    background:rgba(0,229,255,.04);">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="color:#00e5ff;font:900 10px/1 monospace;
+        letter-spacing:.12em;">LIN AI</span>
+      <span style="color:#475569;font:800 10px/1 monospace;">
+        Project Controls</span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <select id="chatFloatFilter"
+        style="background:#020a10;border:1px solid
+        rgba(0,229,255,.18);color:#94a3b8;padding:3px 6px;
+        font:800 10px/1 monospace;max-width:130px;">
+        <option value="">All Projects</option>
+        <option value="SYN-DES-001">SYN-DES-001</option>
+        <option value="SYN-DES-002">SYN-DES-002</option>
+        <option value="SYN-DES-003">SYN-DES-003</option>
+        <option value="SYN-DES-004">SYN-DES-004</option>
+        <option value="SYN-CON-005">SYN-CON-005</option>
+        <option value="SYN-CON-006">SYN-CON-006</option>
+        <option value="SYN-CON-007">SYN-CON-007</option>
+        <option value="SYN-CON-008">SYN-CON-008</option>
+        <option value="SYN-CMB-009">SYN-CMB-009</option>
+        <option value="SYN-CMB-010">SYN-CMB-010</option>
+        <option value="SYN-CMB-011">SYN-CMB-011</option>
+        <option value="SYN-CMB-012">SYN-CMB-012</option>
+      </select>
+      <button onclick="toggleChatPanel()"
+        style="background:transparent;border:none;
+        color:#475569;cursor:pointer;font-size:1rem;
+        line-height:1;padding:2px 4px;">✕</button>
+    </div>
+  </div>
+  <div id="chatFloatMessages"
+    style="flex:1;overflow-y:auto;padding:12px;
+    display:flex;flex-direction:column;gap:10px;">
+    <div style="color:#475569;font:800 10px/1.5 monospace;
+      text-align:center;padding:10px;text-transform:uppercase;
+      letter-spacing:.08em;">
+      Ask me anything about your projects.
+    </div>
+  </div>
+  <div style="padding:10px;border-top:1px solid
+    rgba(0,229,255,.12);display:flex;gap:6px;">
+    <input id="chatFloatInput" type="text"
+      placeholder="Ask a question..."
+      style="flex:1;background:#020a10;border:1px solid
+      rgba(0,229,255,.2);color:#e2e8f0;padding:8px 10px;
+      font:800 11px/1 monospace;outline:none;"
+      onkeydown="if(event.key==='Enter')sendFloatChat()"/>
+    <button onclick="sendFloatChat()"
+      style="background:rgba(0,229,255,.08);border:1px solid
+      rgba(0,229,255,.3);color:#00e5ff;padding:8px 12px;
+      cursor:pointer;font:900 10px/1 monospace;
+      text-transform:uppercase;letter-spacing:.08em;">
+      Send</button>
+    <button id="floatVoiceBtn" onclick="toggleFloatVoice()"
+      title="Voice input"
+      style="background:transparent;border:1px solid
+      rgba(0,229,255,.2);color:#00e5ff;padding:8px 10px;
+      cursor:pointer;font-size:.95rem;">🎤</button>
+  </div>
+</div>
+
+<script>
+var __floatOpen = false;
+var __floatVoiceOn = false;
+var __floatVoiceRec = null;
+
+function toggleChatPanel() {
+  var p = document.getElementById('chatFloatPanel');
+  __floatOpen = !__floatOpen;
+  p.style.display = __floatOpen ? 'flex' : 'none';
+}
+
+function sendFloatChat() {
+  var inp = document.getElementById('chatFloatInput');
+  var q = inp.value.trim();
+  if (!q) return;
+  var code = document.getElementById('chatFloatFilter').value;
+  inp.value = '';
+  appendFloatMsg('user', q);
+  appendFloatMsg('lin', '...');
+  var msgs = document.getElementById('chatFloatMessages');
+  var loader = msgs.lastChild;
+  fetch(window.LIN_CONFIG.appsScriptApiUrl + '?action=chat', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({question:q, projectCode:code||null})
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    loader.remove();
+    if (d.ok) {
+      appendFloatMsg('lin', d.answer);
+      if (__floatVoiceOn && 'speechSynthesis' in window) {
+        var u = new SpeechSynthesisUtterance(d.answer.substring(0,280));
+        u.rate = 1.0; window.speechSynthesis.speak(u);
+      }
+    } else {
+      appendFloatMsg('error', d.error || 'Error');
+    }
+  })
+  .catch(function(e){ loader.remove(); appendFloatMsg('error',e.message); });
+}
+
+function appendFloatMsg(role, text) {
+  var c = document.getElementById('chatFloatMessages');
+  var d = document.createElement('div');
+  d.style.cssText = 'padding:8px 10px;font:800 11px/1.55 monospace;max-width:88%;word-break:break-word;';
+  if (role === 'user') {
+    d.style.cssText += 'align-self:flex-end;margin-left:auto;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.18);color:#e2e8f0;';
+    d.textContent = text;
+  } else if (role === 'lin') {
+    d.style.cssText += 'align-self:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:#cbd5e1;';
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font:900 9px/1 monospace;color:#00e5ff;letter-spacing:.12em;margin-bottom:4px;text-transform:uppercase;';
+    lbl.textContent = 'LIN';
+    d.appendChild(lbl);
+    var t = document.createElement('div');
+    t.textContent = text;
+    d.appendChild(t);
+  } else {
+    d.style.cssText += 'color:#ef4444;font-size:10px;';
+    d.textContent = text;
+  }
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function toggleFloatVoice() {
+  var btn = document.getElementById('floatVoiceBtn');
+  if (!('webkitSpeechRecognition' in window) &&
+      !('SpeechRecognition' in window)) {
+    appendFloatMsg('error','Voice not supported. Use Chrome.');
+    return;
+  }
+  if (__floatVoiceOn) {
+    __floatVoiceOn = false;
+    if (__floatVoiceRec) __floatVoiceRec.stop();
+    btn.style.color = '#00e5ff';
+    btn.style.borderColor = 'rgba(0,229,255,.2)';
+    return;
+  }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  __floatVoiceRec = new SR();
+  __floatVoiceRec.continuous = false;
+  __floatVoiceRec.lang = 'en-US';
+  __floatVoiceRec.onresult = function(e) {
+    document.getElementById('chatFloatInput').value =
+      e.results[0][0].transcript;
+    sendFloatChat();
+  };
+  __floatVoiceRec.onerror = function(e) {
+    appendFloatMsg('error','Voice error: ' + e.error);
+    __floatVoiceOn = false;
+    btn.style.color = '#00e5ff';
+  };
+  __floatVoiceRec.onend = function() {
+    __floatVoiceOn = false;
+    btn.style.color = '#00e5ff';
+    btn.style.borderColor = 'rgba(0,229,255,.2)';
+  };
+  __floatVoiceOn = true;
+  btn.style.color = '#ef4444';
+  btn.style.borderColor = '#ef4444';
+  __floatVoiceRec.start();
+}
+
+function switchSyncTab(tab) {
+  window.__lastSyncTab = tab;
+  var s = document.getElementById('syncTabWrap');
+  var i = document.getElementById('ingestTabWrap');
+  var sb = document.getElementById('tabSyncBtn');
+  var ib = document.getElementById('tabIngestBtn');
+  if (!s || !i) return;
+  s.style.display = tab === 'sync' ? '' : 'none';
+  i.style.display = tab === 'ingest' ? '' : 'none';
+  if (sb) sb.classList.toggle('active', tab === 'sync');
+  if (ib) ib.classList.toggle('active', tab === 'ingest');
+}
+</script>
 </body>
 </html>
