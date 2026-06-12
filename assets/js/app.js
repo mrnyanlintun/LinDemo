@@ -1,456 +1,429 @@
-/* app.js — Lin Project Radar: radar rendering, interactions, audit export
- * PCEIF L2-v0.5-demo — Synthetic demonstration data only
- */
+/* ============================================================
+   Lin Project Radar — app.js
+   Radar rendering, theme switching, signal ledger,
+   PCEIF decision card, audit export.
+   Depends on (load order): data.js, decision.js, app.js
+   ============================================================ */
 
-// ── Constants ────────────────────────────────────────────────────────────────
+(function () {
+  "use strict";
 
-const SECTOR_BOUNDS = {
-  design:       { start: -90, end: 30 },   // top-left arc
-  construction: { start: 30,  end: 150 },  // right arc
-  combined:     { start: 150, end: 270 }   // bottom-left arc (=–90)
-};
+  const SECTORS = {
+    design:       { label: "DESIGN",       start: -90,  end: -18 },
+    construction: { label: "CONSTRUCTION", start: -18,  end: 54  },
+    combined:     { label: "COMBINED",     start: 54,   end: 126 }
+  };
 
-// Radius mapping: health 100 → 8%, health 0 → 92% of radar radius
-function healthToRadius(health, radarR) {
-  const pct = 0.08 + (1 - health / 100) * 0.84;
-  return radarR * pct;
-}
+  const STATUS_COLOR = {
+    green: "var(--clear-green)",
+    amber: "var(--radar-amber)",
+    red:   "var(--alarm-red)"
+  };
 
-// Stable per-project angle within its sector (hash on id, no randomness)
-function projectAngle(project) {
-  const { start, end } = SECTOR_BOUNDS[project.sector];
-  let hash = 0;
-  for (let i = 0; i < project.id.length; i++) hash = (hash * 31 + project.id.charCodeAt(i)) & 0xffffff;
-  const frac = (hash % 1000) / 1000;
-  // Keep 15% padding from sector edges so blips don't overlap dividers
-  const inner = start + (end - start) * 0.15;
-  const outer = end - (end - start) * 0.15;
-  return inner + frac * (outer - inner);
-}
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const CENTER = 200;          // viewBox is 400x400
+  const R_MIN = 0.08 * 180;    // inner radius (health 100)
+  const R_MAX = 0.92 * 180;    // outer radius (health 0)
 
-// Polar → Cartesian (angle in degrees, 0° = right, CCW positive)
-function polar(cx, cy, r, angleDeg) {
-  const rad = (angleDeg * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
-}
+  let selectedId = null;
+  const decisionLog = [];
 
-const STATUS_COLOR = { green: "#3fd68f", amber: "#ffaa3d", red: "#ff5d52" };
+  /* ---------- small helpers ---------- */
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const el = (tag, attrs = {}) => {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  };
+  const reduceMotion = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// ── State ────────────────────────────────────────────────────────────────────
-
-let selectedProject = null;
-let decisionLog = [];
-
-// ── UTC Clock ────────────────────────────────────────────────────────────────
-
-function startClock() {
-  const el = document.getElementById("utc-clock");
-  function tick() {
-    const now = new Date();
-    el.textContent = now.toUTCString().replace("GMT", "UTC").slice(5, 25);
+  // Stable angle within a sector from a hashed id (no per-render jitter)
+  function hashAngle(project) {
+    const sec = SECTORS[project.sector];
+    let h = 0;
+    for (let i = 0; i < project.id.length; i++) h = (h * 31 + project.id.charCodeAt(i)) >>> 0;
+    const span = sec.end - sec.start;
+    const frac = (h % 1000) / 1000;
+    // keep blips off the exact sector boundaries
+    return sec.start + span * (0.14 + 0.72 * frac);
   }
-  tick();
-  setInterval(tick, 1000);
-}
 
-// ── Radar SVG ────────────────────────────────────────────────────────────────
+  function healthToRadius(health) {
+    const clamped = Math.max(0, Math.min(100, health));
+    return R_MIN + (R_MAX - R_MIN) * (1 - clamped / 100);
+  }
 
-function buildRadar() {
-  const svg = document.getElementById("radar-svg");
-  const W = svg.viewBox.baseVal.width;
-  const H = svg.viewBox.baseVal.height;
-  const cx = W / 2, cy = H / 2;
-  const R = Math.min(W, H) * 0.44;
+  function polar(angleDeg, radius) {
+    const a = (angleDeg * Math.PI) / 180;
+    return { x: CENTER + radius * Math.cos(a), y: CENTER + radius * Math.sin(a) };
+  }
 
-  // Zone fills (green / amber / red / critical)
-  const zones = [
-    { r: R,       color: "rgba(255,93,82,0.08)"  },  // critical rim
-    { r: R * 0.72, color: "rgba(255,170,61,0.07)" }, // red-review
-    { r: R * 0.48, color: "rgba(255,170,61,0.05)" }, // amber
-    { r: R * 0.28, color: "rgba(63,214,143,0.06)" }  // green
-  ];
-  zones.forEach(z => {
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", z.r);
-    c.setAttribute("fill", z.color); c.setAttribute("stroke", "none");
-    svg.appendChild(c);
-  });
+  /* ---------- radar scope ---------- */
+  function buildRadar() {
+    const svg = $("#radar-svg");
+    svg.innerHTML = "";
 
-  // Ring lines
-  [0.28, 0.48, 0.72, 1.0].forEach(f => {
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", R * f);
-    c.setAttribute("fill", "none");
-    c.setAttribute("stroke", f === 1.0 ? "rgba(53,214,232,0.3)" : "rgba(53,214,232,0.12)");
-    c.setAttribute("stroke-width", "1");
-    svg.appendChild(c);
-  });
-
-  // Zone labels
-  const zoneLabels = [
-    { r: R * 0.14, label: "GREEN", color: "#3fd68f" },
-    { r: R * 0.38, label: "AMBER", color: "#ffaa3d" },
-    { r: R * 0.60, label: "RED-REVIEW", color: "#ff5d52" },
-    { r: R * 0.86, label: "CRITICAL", color: "#ff5d52" }
-  ];
-  zoneLabels.forEach(({ r, label, color }) => {
-    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    t.setAttribute("x", cx); t.setAttribute("y", cy - r + 4);
-    t.setAttribute("text-anchor", "middle");
-    t.setAttribute("fill", color); t.setAttribute("opacity", "0.45");
-    t.setAttribute("font-size", "8"); t.setAttribute("font-family", "IBM Plex Mono, monospace");
-    t.setAttribute("letter-spacing", "1");
-    t.textContent = label;
-    svg.appendChild(t);
-  });
-
-  // Sector dividers and labels
-  const dividerAngles = [-90, 30, 150, 270];
-  dividerAngles.forEach(a => {
-    const p = polar(cx, cy, R, a);
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", cx); line.setAttribute("y1", cy);
-    line.setAttribute("x2", p.x); line.setAttribute("y2", p.y);
-    line.setAttribute("stroke", "rgba(53,214,232,0.18)"); line.setAttribute("stroke-width", "1");
-    svg.appendChild(line);
-  });
-
-  const sectorLabelAngles = { design: -30, construction: 90, combined: 210 };
-  const sectorNames = { design: "DESIGN", construction: "CONSTRUCTION", combined: "COMBINED" };
-  Object.entries(sectorLabelAngles).forEach(([sec, ang]) => {
-    const lp = polar(cx, cy, R * 1.07, ang);
-    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    t.setAttribute("x", lp.x); t.setAttribute("y", lp.y + 4);
-    t.setAttribute("text-anchor", "middle");
-    t.setAttribute("fill", "rgba(143,176,196,0.6)");
-    t.setAttribute("font-size", "7.5"); t.setAttribute("font-family", "Archivo, sans-serif");
-    t.setAttribute("letter-spacing", "1.5");
-    t.textContent = sectorNames[sec];
-    svg.appendChild(t);
-  });
-
-  // Blips
-  LIN_PROJECTS.forEach(project => {
-    const angle = projectAngle(project);
-    const r = healthToRadius(project.health, R);
-    const { x, y } = polar(cx, cy, r, angle);
-    const color = STATUS_COLOR[project.signals.evm.status] || "#8fb0c4";
-
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.setAttribute("class", "blip");
-    g.setAttribute("data-id", project.id);
-    g.setAttribute("tabindex", "0");
-    g.setAttribute("role", "button");
-    g.setAttribute("aria-label", `${project.id}: ${project.name}, health ${project.health}`);
-
-    // Sweep-brightening pulse ring (hidden by default, shown via CSS animation)
-    const pulseRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    pulseRing.setAttribute("class", "blip-pulse");
-    pulseRing.setAttribute("cx", x); pulseRing.setAttribute("cy", y); pulseRing.setAttribute("r", 10);
-    pulseRing.setAttribute("fill", "none");
-    pulseRing.setAttribute("stroke", color); pulseRing.setAttribute("stroke-width", "1.5");
-    pulseRing.setAttribute("opacity", "0");
-
-    // Selection ring (shown when selected)
-    const selRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    selRing.setAttribute("class", "blip-sel-ring");
-    selRing.setAttribute("cx", x); selRing.setAttribute("cy", y); selRing.setAttribute("r", 9);
-    selRing.setAttribute("fill", "none");
-    selRing.setAttribute("stroke", "#35d6e8"); selRing.setAttribute("stroke-width", "1.5");
-    selRing.setAttribute("opacity", "0");
-
-    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    dot.setAttribute("class", "blip-dot");
-    dot.setAttribute("cx", x); dot.setAttribute("cy", y); dot.setAttribute("r", 5);
-    dot.setAttribute("fill", color);
-
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("x", x + 8); label.setAttribute("y", y + 4);
-    label.setAttribute("fill", "#eef7fb"); label.setAttribute("opacity", "0.8");
-    label.setAttribute("font-size", "7"); label.setAttribute("font-family", "IBM Plex Mono, monospace");
-    label.textContent = project.id;
-
-    // Store sweep delay as CSS custom property based on angle (0–360)
-    const normalizedAngle = ((angle % 360) + 360) % 360;
-    const sweepDelay = -(normalizedAngle / 360) * 6; // 6s sweep period
-    g.style.setProperty("--sweep-delay", `${sweepDelay}s`);
-
-    g.appendChild(pulseRing);
-    g.appendChild(selRing);
-    g.appendChild(dot);
-    g.appendChild(label);
-
-    g.addEventListener("click", () => selectProject(project.id));
-    g.addEventListener("keydown", e => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectProject(project.id); }
+    // zone bands: green / amber / red-review / critical rim
+    const bands = [
+      { r: 0.30 * 180, fill: "var(--zone-green)" },
+      { r: 0.55 * 180, fill: "var(--zone-amber)" },
+      { r: 0.80 * 180, fill: "var(--zone-red)" },
+      { r: 0.92 * 180, fill: "var(--zone-crit)" }
+    ];
+    // draw from outer to inner so inner sits on top
+    for (let i = bands.length - 1; i >= 0; i--) {
+      svg.appendChild(el("circle", {
+        cx: CENTER, cy: CENTER, r: bands[i].r, fill: bands[i].fill,
+        stroke: "var(--ring-line)", "stroke-width": "1"
+      }));
+    }
+    // ring ticks
+    [0.30, 0.55, 0.80].forEach((f) => {
+      svg.appendChild(el("circle", {
+        cx: CENTER, cy: CENTER, r: f * 180, fill: "none",
+        stroke: "var(--ring-line)", "stroke-width": "1", "stroke-dasharray": "2 5"
+      }));
     });
 
-    svg.appendChild(g);
-  });
+    // sector dividers + labels
+    Object.values(SECTORS).forEach((sec) => {
+      [sec.start, sec.end].forEach((ang) => {
+        const p = polar(ang, R_MAX);
+        svg.appendChild(el("line", {
+          x1: CENTER, y1: CENTER, x2: p.x, y2: p.y,
+          stroke: "var(--ring-line)", "stroke-width": "1"
+        }));
+      });
+      const mid = (sec.start + sec.end) / 2;
+      const lp = polar(mid, R_MAX + 14);
+      const t = el("text", {
+        x: lp.x, y: lp.y, "text-anchor": "middle", "dominant-baseline": "middle",
+        class: "sector-label"
+      });
+      t.textContent = sec.label;
+      svg.appendChild(t);
+    });
 
-  // Center crosshair
-  ["h", "v"].forEach(dir => {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    if (dir === "h") { line.setAttribute("x1", cx-8); line.setAttribute("y1", cy); line.setAttribute("x2", cx+8); line.setAttribute("y2", cy); }
-    else             { line.setAttribute("x1", cx); line.setAttribute("y1", cy-8); line.setAttribute("x2", cx); line.setAttribute("y2", cy+8); }
-    line.setAttribute("stroke", "rgba(53,214,232,0.4)"); line.setAttribute("stroke-width", "1");
-    svg.appendChild(line);
-  });
-}
+    // sweep wedge
+    if (!reduceMotion()) {
+      const sweep = el("g", { class: "sweep" });
+      const tip = polar(0, R_MAX);
+      sweep.appendChild(el("path", {
+        d: `M ${CENTER} ${CENTER} L ${tip.x} ${tip.y} A ${R_MAX} ${R_MAX} 0 0 1 ${polar(20, R_MAX).x} ${polar(20, R_MAX).y} Z`,
+        fill: "var(--sweep-fill)"
+      }));
+      svg.appendChild(sweep);
+    }
 
-// ── Fallback project list (accessibility) ────────────────────────────────────
+    // blips
+    LIN_PROJECTS.forEach((p) => {
+      const ang = hashAngle(p);
+      const r = healthToRadius(p.health);
+      const pos = polar(ang, r);
+      const g = el("g", {
+        class: "blip",
+        tabindex: "0",
+        role: "button",
+        "aria-label": `${p.id} ${p.name}, health ${p.health}, status ${deriveHealthState(p)}`,
+        "data-id": p.id
+      });
 
-function buildFallbackList() {
-  const ul = document.getElementById("project-fallback-list");
-  LIN_PROJECTS.forEach(p => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = "fallback-btn";
-    btn.dataset.id = p.id;
-    const dot = document.createElement("span");
-    dot.className = "status-dot";
-    dot.style.background = STATUS_COLOR[p.signals.evm.status];
-    btn.appendChild(dot);
-    btn.appendChild(document.createTextNode(`${p.id} — ${p.name}`));
-    btn.addEventListener("click", () => selectProject(p.id));
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
-}
+      const status = deriveHealthState(p).toLowerCase().replace("-review", "");
+      const color =
+        status === "green" ? STATUS_COLOR.green :
+        status === "amber" ? STATUS_COLOR.amber : STATUS_COLOR.red;
 
-// ── Project selection ────────────────────────────────────────────────────────
+      const ring = el("circle", {
+        cx: pos.x, cy: pos.y, r: 11, fill: "none",
+        stroke: "var(--phosphor)", "stroke-width": "2",
+        class: "blip-ring", opacity: "0"
+      });
+      const dot = el("circle", {
+        cx: pos.x, cy: pos.y, r: 6, fill: color, class: "blip-dot"
+      });
+      const label = el("text", {
+        x: pos.x + 13, y: pos.y + 4, class: "blip-label"
+      });
+      label.textContent = p.id;
 
-function selectProject(id) {
-  selectedProject = LIN_PROJECTS.find(p => p.id === id);
-  if (!selectedProject) return;
+      g.appendChild(ring);
+      g.appendChild(dot);
+      g.appendChild(label);
 
-  // Update blip selection rings
-  document.querySelectorAll(".blip").forEach(g => {
-    const ring = g.querySelector(".blip-sel-ring");
-    ring.setAttribute("opacity", g.dataset.id === id ? "1" : "0");
-  });
+      const choose = () => selectProject(p.id);
+      g.addEventListener("click", choose);
+      g.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); }
+      });
 
-  // Update fallback list
-  document.querySelectorAll(".fallback-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.id === id);
-    btn.setAttribute("aria-pressed", btn.dataset.id === id ? "true" : "false");
-  });
+      svg.appendChild(g);
+    });
 
-  renderLedger(selectedProject);
-  renderDecisionCard(selectedProject);
-
-  // Announce to screen readers
-  const live = document.getElementById("ledger-live");
-  live.textContent = `Selected: ${selectedProject.id}, ${selectedProject.name}`;
-}
-
-// ── Signal Ledger ────────────────────────────────────────────────────────────
-
-function signalRow(label, signal, methodName, extraMetric) {
-  const pill = `<span class="status-pill status-${signal.status}">${signal.status.toUpperCase()}</span>`;
-  return `
-    <div class="signal-row">
-      <div class="signal-label">${label}</div>
-      <div class="signal-status">${pill}</div>
-      <div class="signal-metric mono">${extraMetric}</div>
-      <div class="signal-method muted">${methodName}</div>
-    </div>`;
-}
-
-function renderLedger(project) {
-  const { signals } = project;
-  const decision = deriveDecision(project);
-
-  const conflictBanner = decision.conflictType !== "Agreement — low risk"
-    ? `<div class="conflict-banner conflict-${decision.healthState}" role="alert">
-         <span class="conflict-icon">⚑</span>
-         <span class="conflict-label">${decision.conflictType}</span>
-       </div>`
-    : "";
-
-  document.getElementById("ledger-region").innerHTML = `
-    <div class="ledger-header">
-      <span class="mono muted">${project.id}</span>
-      <span class="ledger-name">${project.name}</span>
-      <span class="mono muted">${project.reportingPeriod}</span>
-    </div>
-    ${conflictBanner}
-    <div class="signal-table">
-      ${signalRow("EVM", signals.evm, "Earned Value Management",
-          `CPI ${signals.evm.cpi.toFixed(2)} / SPI ${signals.evm.spi.toFixed(2)}`)}
-      ${signalRow("Monte Carlo", signals.mc, `${signals.mc.iterations.toLocaleString()} iterations`,
-          `P80 overrun ${signals.mc.p80eacOverrunPct > 0 ? "+" : ""}${signals.mc.p80eacOverrunPct.toFixed(1)}%`)}
-      ${signalRow("CUSUM / SPC", signals.cusum, "Cumulative Sum drift",
-          `Drift ${signals.cusum.drift.toFixed(1)} (thresh ${signals.cusum.threshold.toFixed(1)})${signals.cusum.breached ? " ⚠ BREACH" : ""}`)}
-      ${signalRow("Document Risk", signals.doc, `Source: ${signals.doc.source}`,
-          `Score ${signals.doc.score.toFixed(2)}`)}
-    </div>
-    <div class="doc-excerpt">
-      <span class="muted mono" style="font-size:0.7rem">DOC EXCERPT —</span>
-      <span class="doc-text">${signals.doc.excerpt}</span>
-    </div>
-    <div class="health-bar-wrap">
-      <span class="muted" style="font-size:0.75rem">COMPOSITE HEALTH</span>
-      <div class="health-bar"><div class="health-fill" style="width:${project.health}%;background:${STATUS_COLOR[decision.healthState]}"></div></div>
-      <span class="mono" style="font-size:0.8rem">${project.health}</span>
-    </div>
-  `;
-}
-
-// ── Decision Card ────────────────────────────────────────────────────────────
-
-function renderDecisionCard(project) {
-  const decision = deriveDecision(project);
-  const card = document.getElementById("decision-card");
-
-  const stateClass = `state-${decision.healthState}`;
-  const docList = decision.documentation.map(d => `<li>${d}</li>`).join("");
-
-  const fairnessGateHtml = decision.fairnessGateRequired ? `
-    <div class="fairness-gate" role="group" aria-labelledby="fg-label">
-      <div class="fairness-gate-header" id="fg-label">
-        <span class="fg-icon">⚖</span>
-        <strong>Fairness Gate — Required Before Formal Action</strong>
-      </div>
-      <label class="fg-check-label">
-        <input type="checkbox" id="fg-checkbox" />
-        Contractor response opportunity will be provided before any formal contractual action is taken.
-      </label>
-    </div>` : "";
-
-  card.innerHTML = `
-    <div class="decision-top">
-      <div class="decision-state ${stateClass}">
-        <span class="decision-state-label">DERIVED STATE</span>
-        <span class="decision-state-value">${decision.healthState.toUpperCase().replace("-", " ")}</span>
-      </div>
-      <div class="decision-authority">
-        <span class="muted" style="font-size:0.7rem;letter-spacing:1px">AUTHORITY</span>
-        <span class="decision-authority-value">${decision.authority}</span>
-      </div>
-    </div>
-
-    <div class="decision-action">
-      <p class="decision-action-label muted">RECOMMENDED ACTION</p>
-      <p class="decision-action-text">${decision.action}</p>
-    </div>
-
-    <div class="decision-docs">
-      <p class="muted" style="font-size:0.72rem;letter-spacing:1px;margin-bottom:6px">DOCUMENTATION REQUIRED</p>
-      <ul class="doc-list">${docList}</ul>
-    </div>
-
-    ${fairnessGateHtml}
-
-    <div class="decision-record">
-      <label for="rationale-input" class="rationale-label">Reviewer rationale (required, min 20 chars)</label>
-      <textarea id="rationale-input" class="rationale-textarea"
-        placeholder="Describe the basis for the decision taken, any deviations from the recommended action, and the next review date…"
-        aria-required="true"></textarea>
-      <div class="record-actions">
-        <button id="record-btn" class="record-btn" disabled>Record decision</button>
-        <button id="export-btn" class="export-btn" ${decisionLog.length === 0 ? "disabled" : ""}>Export audit JSON</button>
-      </div>
-    </div>
-
-    <div id="decision-log-section" class="decision-log-section" ${decisionLog.length === 0 ? 'style="display:none"' : ""}>
-      <p class="muted" style="font-size:0.72rem;letter-spacing:1px;margin-bottom:8px">DECISION LOG</p>
-      <div id="decision-log-entries"></div>
-    </div>
-  `;
-
-  renderDecisionLog();
-  wireDecisionCard(project, decision);
-}
-
-function wireDecisionCard(project, decision) {
-  const rationale = document.getElementById("rationale-input");
-  const recordBtn = document.getElementById("record-btn");
-  const exportBtn = document.getElementById("export-btn");
-  const fgCheck = document.getElementById("fg-checkbox");
-
-  function updateRecordBtn() {
-    const rationaleOk = rationale.value.trim().length >= 20;
-    const fairnessOk = !decision.fairnessGateRequired || (fgCheck && fgCheck.checked);
-    recordBtn.disabled = !(rationaleOk && fairnessOk);
+    highlightBlip();
   }
 
-  rationale.addEventListener("input", updateRecordBtn);
-  if (fgCheck) fgCheck.addEventListener("change", updateRecordBtn);
+  function highlightBlip() {
+    document.querySelectorAll(".blip").forEach((b) => {
+      const on = b.getAttribute("data-id") === selectedId;
+      b.classList.toggle("selected", on);
+      const ring = b.querySelector(".blip-ring");
+      if (ring) ring.setAttribute("opacity", on ? "1" : "0");
+    });
+  }
 
-  recordBtn.addEventListener("click", () => {
-    const entry = {
-      projectId: project.id,
-      projectName: project.name,
-      reportingPeriod: project.reportingPeriod,
-      signals: project.signals,
-      decision: {
-        healthState: decision.healthState,
-        conflictType: decision.conflictType,
-        action: decision.action,
-        authority: decision.authority,
-        documentation: decision.documentation
+  /* ---------- accessible fallback list ---------- */
+  function buildFallbackList() {
+    const ul = $("#project-list");
+    ul.innerHTML = "";
+    LIN_PROJECTS.forEach((p) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.className = "list-item";
+      btn.setAttribute("data-id", p.id);
+      const state = deriveHealthState(p);
+      btn.innerHTML =
+        `<span class="li-code">${p.id}</span>` +
+        `<span class="li-name">${p.name}</span>` +
+        `<span class="li-state state-${state.toLowerCase().replace("-review","")}">${state}</span>`;
+      btn.addEventListener("click", () => selectProject(p.id));
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+
+  function highlightListItem() {
+    document.querySelectorAll(".list-item").forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-id") === selectedId);
+    });
+  }
+
+  /* ---------- signal ledger ---------- */
+  function statusPill(status) {
+    const map = { green: "Green", amber: "Amber", red: "Red" };
+    return `<span class="pill pill-${status}">${map[status] || status}</span>`;
+  }
+
+  function renderLedger(p) {
+    const s = p.signals;
+    const conflict = classifyConflict(p);
+
+    const rows = [
+      {
+        name: "EVM cost / schedule", method: "Earned Value Management",
+        status: s.evm.status,
+        metric: `CPI ${s.evm.cpi.toFixed(2)} · SPI ${s.evm.spi.toFixed(2)}`,
+        detail: `Data date ${s.evm.dataDate}`
       },
-      fairnessGateRequired: decision.fairnessGateRequired,
-      fairnessGateAcknowledged: decision.fairnessGateRequired ? (fgCheck && fgCheck.checked) : null,
-      reviewerRationale: rationale.value.trim(),
-      isoTimestamp: new Date().toISOString(),
-      pceif_version: PCEIF_VERSION,
-      data_boundary: DATA_BOUNDARY
-    };
-    decisionLog.push(entry);
-    rationale.value = "";
-    if (fgCheck) fgCheck.checked = false;
-    updateRecordBtn();
-    renderDecisionLog();
-    document.getElementById("decision-log-section").style.display = "";
-    if (exportBtn) exportBtn.disabled = false;
-  });
+      {
+        name: "Probabilistic forecast", method: `Monte Carlo · ${s.mc.iterations.toLocaleString()} iter`,
+        status: s.mc.status,
+        metric: `P80 EAC +${s.mc.p80eacOverrunPct.toFixed(1)}% · P(delay) ${s.mc.pMilestoneDelay.toFixed(2)}`,
+        detail: "Percentile exposure on cost and milestone finish"
+      },
+      {
+        name: "Anomaly / trend", method: "SPC / CUSUM",
+        status: s.cusum.status,
+        metric: `${s.cusum.metric} drift ${s.cusum.drift.toFixed(1)} / ${s.cusum.threshold.toFixed(1)}`,
+        detail: s.cusum.breached ? "Threshold breached" : "Within control limits"
+      },
+      {
+        name: "Document risk", method: "Keyword / rule extraction",
+        status: s.doc.status,
+        metric: `Risk score ${s.doc.score.toFixed(2)}`,
+        detail: `<span class="src">${s.doc.source}</span><span class="excerpt">“${s.doc.excerpt}”</span>`
+      }
+    ];
 
-  if (exportBtn) {
-    exportBtn.addEventListener("click", exportAuditJson);
+    const conflictClass =
+      conflict === "Agreement — low risk" ? "conflict-calm" : "conflict-alert";
+
+    $("#ledger").innerHTML =
+      `<div class="ledger-head">
+         <div>
+           <p class="eyebrow">Signal ledger</p>
+           <h2>${p.id}</h2>
+           <p class="ledger-sub">${p.name}</p>
+         </div>
+       </div>
+       <div class="conflict-banner ${conflictClass}">
+         <span class="conflict-label">Signal conflict</span>
+         <span class="conflict-value">${conflict}</span>
+       </div>
+       <div class="signal-rows">` +
+      rows.map((r) => `
+        <div class="signal-row">
+          <div class="sig-top">
+            <span class="sig-name">${r.name}</span>
+            ${statusPill(r.status)}
+          </div>
+          <div class="sig-metric">${r.metric}</div>
+          <div class="sig-meta"><span class="sig-method">${r.method}</span></div>
+          <div class="sig-detail">${r.detail}</div>
+        </div>`).join("") +
+      `</div>`;
   }
-}
 
-function renderDecisionLog() {
-  const container = document.getElementById("decision-log-entries");
-  if (!container) return;
-  container.innerHTML = "";
-  const section = document.getElementById("decision-log-section");
-  if (decisionLog.length === 0) { if (section) section.style.display = "none"; return; }
-  if (section) section.style.display = "";
+  /* ---------- decision card ---------- */
+  function renderDecisionCard(p) {
+    const d = deriveDecision(p);
+    const stateClass = d.healthState.toLowerCase().replace("-review", "");
 
-  [...decisionLog].reverse().forEach((entry, i) => {
-    const div = document.createElement("div");
-    div.className = "log-entry";
-    div.innerHTML = `
-      <span class="mono muted" style="font-size:0.7rem">${entry.isoTimestamp}</span>
-      <span class="mono" style="font-size:0.78rem;margin-left:8px">${entry.projectId}</span>
-      <span class="status-pill status-${entry.decision.healthState}" style="margin-left:8px">${entry.decision.healthState.toUpperCase()}</span>
-      <div style="margin-top:4px;font-size:0.8rem;color:#c4dbe8">${entry.reviewerRationale}</div>
-      ${entry.fairnessGateRequired ? '<div class="fg-ack-note">⚖ Fairness gate acknowledged</div>' : ""}
-    `;
-    container.appendChild(div);
-  });
-}
+    const fairnessBlock = d.fairnessGateRequired
+      ? `<label class="fairness-gate">
+           <input type="checkbox" id="fairness-check" />
+           <span>Contractor response opportunity will be provided before any formal action.
+           Required before this decision can be recorded.</span>
+         </label>`
+      : "";
 
-function exportAuditJson() {
-  const json = JSON.stringify(decisionLog, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `lin-pceif-audit-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+    $("#decision-card").innerHTML =
+      `<div class="dc-head">
+         <div>
+           <p class="eyebrow">PCEIF governance decision</p>
+           <h2>Recommended action</h2>
+         </div>
+         <span class="state-badge state-${stateClass}">${d.healthState}</span>
+       </div>
+       <div class="dc-grid">
+         <div class="dc-field"><span class="dc-label">Conflict</span><span class="dc-value">${d.conflictType}</span></div>
+         <div class="dc-field"><span class="dc-label">Authority</span><span class="dc-value">${d.authority}</span></div>
+         <div class="dc-field dc-wide"><span class="dc-label">Recommended action</span><span class="dc-value">${d.action}</span></div>
+         <div class="dc-field dc-wide"><span class="dc-label">Documentation required</span><span class="dc-value">${d.documentation}</span></div>
+       </div>
+       ${fairnessBlock}
+       <label class="rationale-label" for="rationale">Reviewer rationale <span class="req">(required, min 20 characters)</span></label>
+       <textarea id="rationale" placeholder="State why this action is taken, deferred, or overridden. Recorded to the audit log."></textarea>
+       <div class="dc-actions">
+         <button id="record-btn" class="btn primary" disabled>Record decision</button>
+         <button id="export-btn" class="btn">Export audit JSON</button>
+       </div>
+       <p class="dc-note">Recommendation only — a named human reviewer records the decision. The recommendation does not trigger any action on its own.</p>`;
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+    wireDecisionControls(p, d);
+  }
 
-document.addEventListener("DOMContentLoaded", () => {
-  startClock();
-  buildRadar();
-  buildFallbackList();
-  // Select first project by default
-  selectProject(LIN_PROJECTS[0].id);
-});
+  function wireDecisionControls(p, d) {
+    const rationale = $("#rationale");
+    const recordBtn = $("#record-btn");
+    const fairnessCheck = $("#fairness-check"); // may be null
+
+    const evaluate = () => {
+      const longEnough = rationale.value.trim().length >= 20;
+      const fairnessOk = !d.fairnessGateRequired || (fairnessCheck && fairnessCheck.checked);
+      recordBtn.disabled = !(longEnough && fairnessOk);
+    };
+
+    rationale.addEventListener("input", evaluate);
+    if (fairnessCheck) fairnessCheck.addEventListener("change", evaluate);
+
+    recordBtn.addEventListener("click", () => {
+      const entry = {
+        project: p.id,
+        state: d.healthState,
+        action: d.action,
+        rationale: rationale.value.trim(),
+        fairnessAcknowledged: d.fairnessGateRequired ? fairnessCheck.checked : null,
+        recordedAt: new Date().toISOString()
+      };
+      decisionLog.unshift(entry);
+      renderDecisionLog();
+      rationale.value = "";
+      if (fairnessCheck) fairnessCheck.checked = false;
+      evaluate();
+    });
+
+    $("#export-btn").addEventListener("click", () => {
+      const reviewerInput = {
+        rationale: rationale.value.trim() || "(not recorded at export time)",
+        fairnessAcknowledged: fairnessCheck ? fairnessCheck.checked : null,
+        recordedAt: new Date().toISOString()
+      };
+      const record = buildAuditRecord(p, d, reviewerInput);
+      const blob = new Blob([JSON.stringify(record, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit_${p.id}_${p.reportingPeriod}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  function renderDecisionLog() {
+    const wrap = $("#decision-log");
+    if (!decisionLog.length) {
+      wrap.innerHTML = `<p class="log-empty">No decisions recorded this session.</p>`;
+      return;
+    }
+    wrap.innerHTML =
+      `<p class="eyebrow">Decision log (this session)</p>` +
+      decisionLog.map((e) => `
+        <div class="log-entry">
+          <div class="log-top"><span class="log-proj">${e.project}</span><span class="log-state state-${e.state.toLowerCase().replace("-review","")}">${e.state}</span></div>
+          <div class="log-action">${e.action}</div>
+          <div class="log-rationale">“${e.rationale}”</div>
+          <div class="log-time">${new Date(e.recordedAt).toLocaleString()}${e.fairnessAcknowledged ? " · fairness gate acknowledged" : ""}</div>
+        </div>`).join("");
+  }
+
+  /* ---------- selection orchestration ---------- */
+  function selectProject(id) {
+    selectedId = id;
+    const p = LIN_PROJECTS.find((x) => x.id === id);
+    if (!p) return;
+    highlightBlip();
+    highlightListItem();
+    renderLedger(p);
+    renderDecisionCard(p);
+  }
+
+  /* ---------- theme switch ---------- */
+  function applyTheme(theme) {
+    document.body.dataset.theme = theme;
+    document.querySelectorAll("[data-set-theme]").forEach((b) =>
+      b.classList.toggle("active", b.dataset.setTheme === theme)
+    );
+    try { localStorage.setItem("lin-radar-theme", theme); } catch (e) {}
+  }
+
+  /* ---------- clock ---------- */
+  function startClock() {
+    const node = $("#utc-clock");
+    const tick = () => {
+      const d = new Date();
+      node.textContent = d.toISOString().slice(11, 19) + " UTC";
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  /* ---------- init ---------- */
+  function init() {
+    document.querySelectorAll("[data-set-theme]").forEach((b) =>
+      b.addEventListener("click", () => applyTheme(b.dataset.setTheme))
+    );
+    let saved = "clean";
+    try { saved = localStorage.getItem("lin-radar-theme") || "clean"; } catch (e) {}
+    applyTheme(saved);
+
+    buildRadar();
+    buildFallbackList();
+    renderDecisionLog();
+    startClock();
+
+    // default selection: the flagship red-review fairness case
+    selectProject("SYN-CON-005");
+
+    // rebuild radar geometry on resize-driven motion-pref changes
+    window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener?.("change", buildRadar);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

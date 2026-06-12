@@ -1,70 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lin Project Radar — PCEIF Demonstration</title>
-  <meta name="description" content="Lin Project Radar: a synthetic-data demonstration of the PCEIF signal-to-action governance framework for public AEC capital programs." />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lin Project Radar — PCEIF signal-to-action demonstration</title>
+  <meta name="description" content="Synthetic demonstration of the PCEIF signal-to-action governance workflow for public AEC capital programs. Doctor of Engineering praxis, GWU." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/radar.css" />
 </head>
-<body>
+<body data-theme="clean">
+  <div class="app">
 
-  <header class="topbar">
-    <span class="wordmark">LIN <span class="wm-accent">PROJECT RADAR</span></span>
-    <span id="utc-clock" class="utc-clock" aria-label="Current UTC time"></span>
-    <span class="synthetic-badge" role="note">SYNTHETIC DEMONSTRATION DATA</span>
-  </header>
+    <header class="topbar">
+      <div class="wordmark">
+        <span class="mark">LIN PROJECT RADAR</span>
+        <span class="sub">PCEIF console</span>
+      </div>
+      <span class="clock" id="utc-clock" aria-label="Coordinated Universal Time">--:--:-- UTC</span>
+      <div class="theme-switch" role="group" aria-label="Visual theme">
+        <button data-set-theme="aviation">Aviation</button>
+        <button data-set-theme="clean" class="active">Clean</button>
+        <button data-set-theme="twin">Digital Twin</button>
+      </div>
+      <span class="synthetic-badge">SYNTHETIC DEMONSTRATION DATA</span>
+    </header>
 
-  <main>
+    <section class="intro">
+      <p class="eyebrow">Signal to action</p>
+      <h1>From multi-model signals to a governed decision</h1>
+      <p>Each project is a blip on the scope. Distance from center is drift from baseline; angle is delivery sector. Select a project to see its signal ledger, the signal-conflict classification, and the PCEIF governance decision — with explicit authority, documentation, and a contractor fairness gate where required.</p>
+    </section>
 
-    <!-- ── Radar scope ─────────────────────────────────────────────── -->
-    <section class="radar-panel" aria-label="Project radar scope">
-      <p class="panel-eyebrow">Radar Scope — Drift from Baseline</p>
-      <div class="radar-wrap">
-        <div class="radar-sweep" aria-hidden="true"></div>
-        <svg id="radar-svg" viewBox="0 0 600 600" role="group"
-             aria-label="Polar radar chart. Distance from center indicates drift from baseline; angle indicates delivery sector.">
-        </svg>
+    <div class="console">
+
+      <!-- RADAR -->
+      <section class="panel radar-panel" aria-label="Project radar scope">
+        <div class="radar-wrap">
+          <svg id="radar-svg" viewBox="0 0 400 400" role="img"
+               aria-label="Radar scope. Projects plotted by health and delivery sector. A keyboard-accessible list of the same projects is provided below.">
+          </svg>
+        </div>
+        <div class="radar-legend" aria-hidden="true">
+          <span><i class="lg-green"></i> Green</span>
+          <span><i class="lg-amber"></i> Amber</span>
+          <span><i class="lg-red"></i> Red-review</span>
+        </div>
+        <p class="radar-note">Center = on baseline · outer rim = high drift. Sectors: Design / Construction / Combined delivery. Blips are keyboard-focusable; the list below is an equivalent control path.</p>
+
+        <div class="fallback">
+          <h3 id="list-heading">Projects (list view)</h3>
+          <ul id="project-list" aria-labelledby="list-heading"></ul>
+        </div>
+      </section>
+
+      <!-- LEDGER + DECISION -->
+      <div>
+        <section class="panel" id="ledger" aria-label="Signal ledger" aria-live="polite"></section>
+        <section class="panel decision-section" id="decision-card" aria-label="PCEIF governance decision"></section>
+        <section class="panel log-panel" id="decision-log" aria-label="Decision log"></section>
       </div>
 
-      <!-- Accessible fallback: the radar is never the only selection path -->
-      <nav class="fallback-section" aria-label="Project list (keyboard and screen-reader selection)">
-        <p class="panel-eyebrow" style="margin-bottom:8px">Project List</p>
-        <ul id="project-fallback-list"></ul>
-      </nav>
-    </section>
+    </div>
 
-    <!-- ── Signal ledger ───────────────────────────────────────────── -->
-    <aside class="ledger-panel" aria-label="Signal ledger for selected project">
-      <p class="panel-eyebrow">Signal Ledger</p>
-      <div id="ledger-live" class="visually-hidden" aria-live="polite"
-           style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></div>
-      <div id="ledger-region" aria-live="polite"></div>
-    </aside>
+    <footer class="foot">
+      Demonstration only. All project data is synthetic; no real project, agency, employer, contractor, or vendor is referenced.
+      This is not a validated production system: it does not validate predictive accuracy, diagnose live projects, or issue contractual direction.
+      Every recommended action requires named human approval before it is recorded, and contractor fairness gates require contractor response opportunity before any formal action.
+      Built for a Doctor of Engineering praxis (The George Washington University, Engineering Management). PCEIF&nbsp;L2-v0.5-demo.
+    </footer>
 
-    <!-- ── PCEIF decision card ─────────────────────────────────────── -->
-    <section class="decision-panel" aria-label="PCEIF governance decision card">
-      <p class="panel-eyebrow">PCEIF Governance Decision Card</p>
-      <div id="decision-card"></div>
-    </section>
-
-  </main>
-
-  <footer>
-    <p>
-      <strong>Academic boundary statement.</strong>
-      Lin Project Radar is a demonstration artifact for a Doctor of Engineering praxis
-      (Engineering Management). All project data shown is synthetic; no real project,
-      agency, contractor, or vendor is represented. No predictive-accuracy validation
-      has been performed. Every recommended action requires human review and approval —
-      the system records decisions, it does not make them. This is not a production system.
-    </p>
-  </footer>
+  </div>
 
   <script src="assets/js/data.js"></script>
   <script src="assets/js/decision.js"></script>
