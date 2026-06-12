@@ -48,13 +48,13 @@
       id: "radar",
       keywords: ["radar", "portfolio", "blip", "scope", "circle", "ring", "sector", "distance", "center"],
       title: "Reading the portfolio scope",
-      body: "Each blip is a synthetic project. Distance from center = drift from baseline (healthy projects sit near center). Angle = delivery sector: Design, Construction, or Hybrid. Blip color = derived health state. Click a blip — or use the equivalent list below the scope — to open that project's Detail page (ledger, decision card, and all five modules for that project)."
+      body: "Each blip is a synthetic project. Distance from center = drift from baseline (healthy projects sit near center). Angle = delivery sector: Design, Construction, or Hybrid. Blip color = derived health state. Click a blip — or use the equivalent list below the scope — to open that project's Detail page (ledger, decision card, and all five signals for that project)."
     },
     {
       id: "module01",
       keywords: ["module 01", "module 1", "hybrid", "dynamic simulation", "evm module", "cpi", "spi", "eac", "earned value"],
       title: "Module 01 — Hybrid Dynamic Simulation",
-      body: "Module 01 covers the EVM core: CPI (cost performance, EV/AC) and SPI (schedule performance, EV/PV) against the baseline, plus the P80 EAC exposure from the probabilistic forecast. CPI or SPI below 1.00 means underperformance. The chart on the Modules page is an illustrative view of the synthetic portfolio, not live model output."
+      body: "Module 01 covers the EVM core: CPI (cost performance, EV/AC) and SPI (schedule performance, EV/PV) against the baseline, plus the P80 EAC exposure from the probabilistic forecast. CPI or SPI below 1.00 means underperformance. The chart on the Signals page is an illustrative view of the synthetic portfolio, not live model output."
     },
     {
       id: "module02",
@@ -78,7 +78,7 @@
       id: "module05",
       keywords: ["module 05", "module 5", "abm", "agent", "governance layer", "decision rules", "authority"],
       title: "Module 05 — ABM governance layer",
-      body: "Module 05 is the agent-based governance layer: each authority role (PM, controls lead, program director) is an agent with explicit decision rules. Those rules live in decision.js as pure, readable functions — deriveHealthState, classifyConflict, and deriveDecision — and the Modules page calls them directly. The decision card you see on the Portfolio and Project Detail pages IS this module's output."
+      body: "Module 05 is the agent-based governance layer: each authority role (PM, controls lead, program director) is an agent with explicit decision rules. Those rules live in decision.js as pure, readable functions — deriveHealthState, classifyConflict, and deriveDecision — and the Signals page calls them directly. The decision card you see on the Portfolio and Project Detail pages IS this module's output."
     },
     {
       id: "fairness",
