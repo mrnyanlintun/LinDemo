@@ -1,97 +1,67 @@
-# Lin Phase 4A - GitHub Pages + Apps Script Ingestion Smoke Test
+# Lin Project Radar
 
-This package continues the locked Lin Path A architecture:
+A static, single-purpose demonstration website for **PCEIF** — the Public Capital
+EVM Intelligence Framework — developed as part of a Doctor of Engineering praxis
+(The George Washington University, Engineering Management).
 
-```text
-GitHub Pages frontend
-    -> HTML / CSS / JavaScript HUD interface
-    -> Google Apps Script API bridge
-    -> Google Drive folder: Lin_Demo_Data_v0_2
-    -> Synthetic project files and generated JSON/CSV outputs
+## What it demonstrates
+
+How a project's multi-model signals become a **governed management decision**:
+
+| Signal | Method |
+|---|---|
+| EVM | Earned Value Management (CPI / SPI vs. baseline) |
+| Monte Carlo | P80 EAC overrun and milestone-delay probability (5,000 iterations) |
+| CUSUM / SPC | Cumulative-sum drift detection against a control threshold |
+| Document risk | RFI / submittal evidence scoring with source excerpts |
+
+The radar scope encodes the portfolio: **distance from center = drift from
+baseline**, **angle = delivery sector** (Design / Construction / Combined).
+Selecting a blip loads the signal ledger and the PCEIF decision card, which
+derives a recommended action, the responsible authority, and the required
+documentation from explicit, readable rules in
+[`assets/js/decision.js`](assets/js/decision.js).
+
+When a red-review implicates delivery responsibility, a **contractor fairness
+gate** appears as a mandatory workflow step: the reviewer must acknowledge that
+a contractor response opportunity will be provided before any formal action.
+Recorded decisions (with reviewer rationale and ISO timestamp) can be exported
+as audit JSON.
+
+## Academic boundary
+
+- **All data is synthetic.** No real project, agency, employer, contractor, or
+  vendor is represented. Project codes follow the `SYN-*` convention.
+- **No predictive-accuracy validation has been performed.** The decision rules
+  are illustrative of the framework's structure, not validated thresholds.
+- **Human approval is required for every action.** The system recommends and
+  records; it does not decide.
+- This is **not a production system**.
+
+## Architecture
+
+Pure static HTML/CSS/JS. No build step, no backend, no LLM calls, no analytics,
+no external JS dependencies. The only external resource is Google Fonts.
+
+```
+index.html
+assets/css/radar.css      — aviation-console theme
+assets/js/data.js         — synthetic project roster
+assets/js/decision.js     — PCEIF decision rules (pure functions, no DOM)
+assets/js/app.js          — radar rendering, interactions, audit export
 ```
 
-Phase 4A answers one narrow question:
+## Run locally
 
-```text
-Can the GitHub Pages HUD frontend call the Apps Script bridge, read the cloud-folder root, find cloud_folder_index.json, detect all 12 projects, and display ingestion status in the HUD?
+Open `index.html` directly in a browser (`file://` works) or serve the folder:
+
+```
+python -m http.server 8000
 ```
 
-## Package contents
+## Deploy to GitHub Pages
 
-```text
-lin-demo/
-├── index.html
-├── styles.css
-├── app.js
-├── config.js
-├── apps_script/
-│   └── Code.gs
-├── docs/
-│   ├── GITHUB_PAGES_DEPLOYMENT.md
-│   ├── GOOGLE_APPS_SCRIPT_SETUP.md
-│   └── PHASE4A_SUCCESS_CRITERIA.md
-└── README.md
-```
-
-A `.nojekyll` file is also included so GitHub Pages serves the static files without Jekyll processing.
-
-## Setup order
-
-1. Confirm the synthetic data folder exists in Google Drive and is shared as `Anyone with the link -> Viewer`.
-2. Create the Google Apps Script bridge using `apps_script/Code.gs`.
-3. Deploy the Apps Script project as a web app.
-4. Paste the deployed web app URL into `config.js`.
-5. Upload the package contents to a GitHub repository.
-6. Turn on GitHub Pages for the repository.
-7. Open the GitHub Pages URL and run `03 Cloud Sync -> Run smoke test`.
-
-## Important configuration
-
-`config.js` starts with the locked Drive root folder ID:
-
-```javascript
-const LIN_CONFIG = {
-  driveRootFolderId: "14u6LT8E1xKBLbHwq90SySmfou0oVlSqR",
-  appsScriptApiUrl: "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE",
-  transport: "jsonp"
-};
-```
-
-Leave `transport: "jsonp"` for the first smoke test. The Apps Script bridge supports plain JSON responses, but JSONP avoids browser cross-origin issues for this read-only synthetic-data test.
-
-## Phase 4A pass condition
-
-The HUD should display:
-
-```text
-Root folder detected: Lin_Demo_Data_v0_2
-cloud_folder_index.json found: Yes
-Projects detected: 12
-Design-only: 4
-Construction-only: 4
-Combined: 4
-Green: 4
-Amber: 4
-Red: 4
-Explainability files found: Yes
-Audit trails found: Yes
-Ready for Phase 4B: Yes
-```
-
-## What this package does not do yet
-
-- It does not call Gemini, Groq, OpenAI, Claude, or any other model provider.
-- It does not perform full document-risk extraction.
-- It does not write back to Google Drive.
-- It does not replace human review.
-
-Phase 4A is intentionally limited to ingestion, folder detection, endpoint response, project counting, explainability-file detection, and audit-trail detection.
-
-## Brand and public-demo constraints preserved
-
-- Visible wordmark uses `Lin` only.
-- No `Lin // PCEIF` public wordmark.
-- No `Ask Lin` or `Check with Lin` UI language.
-- No official GWU logo or third-party entertainment marks.
-- Cloud page uses generic `cloud folder` language in the UI.
-- Footer includes the locked praxis line and disclaimer.
+1. Push this repository to GitHub.
+2. Settings → Pages → Source: *Deploy from a branch* → select the branch and `/ (root)`.
+3. All asset paths are relative, so the site works from a project subpath
+   (e.g. `https://<user>.github.io/<repo>/`) without configuration.
