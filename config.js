@@ -8,7 +8,7 @@
 
 const LIN_CONFIG = {
   driveRootFolderId: "14u6LT8E1xKBLbHwq90SySmfou0oVlSqR",
-  appsScriptApiUrl: "https://script.google.com/macros/s/AKfycbzGhRB3htkXMjo1dyUdDNncYnIpOm333dvI51eyLrMBLE1NjtdGlB7Vpmtp7ucxf_Yq/exec",
+  appsScriptApiUrl: "https://script.google.com/macros/s/AKfycbwhmg_1L_RjbxPTR0IF3xpmHgLLzHA67O3mH27uqrAFfv8bF9U359yBqwjqbZO3YNTO/exec",
   transport: "fetch",
   useSampleDataWhenUnconfigured: true,
   phaseLabel: "Phase 4A",
