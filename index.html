@@ -161,8 +161,7 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
       <button class="nav-btn" data-page="definitions" title="Definitions"><span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M4 5h7a4 4 0 0 1 4 4v10H8a4 4 0 0 0-4 4V5Z"/><path d="M20 5h-5a4 4 0 0 0-4 4v10h5a4 4 0 0 1 4 4V5Z"/><path d="M8 9h3M8 13h3M15 9h2"/></svg></span><span class="btn-label">Lookup</span></button>
 
 <button class="nav-btn" data-page="projects"><span style="font-size:1rem;font-weight:900;line-height:1;">+</span><span class="btn-label">New Project</span></button>
-      <button class="nav-btn" data-page="chat"><span>💬</span> Lin Chat</button>
-      <button id="themeToggle" class="nav-btn theme-toggle" type="button" aria-pressed="false" title="Switch to light theme"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><span class="btn-label">Light</span></button>
+<button id="themeToggle" class="nav-btn theme-toggle" type="button" aria-pressed="false" title="Switch to light theme"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><span class="btn-label">Light</span></button>
     </nav>
 
     <main>
@@ -332,59 +331,6 @@ body.light-theme .factor-card span,body.light-theme .consequence-box{color:rgba(
         </div>
       </section>
 
-      <section class="page" id="chat">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Lin AI Chat</p>
-            <h1>Ask about your projects</h1>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <label style="font-size:0.75rem;color:#94a3b8;">Project filter</label>
-            <select id="chatProjectFilter" style="background:#0d1117;border:1px solid rgba(0,229,255,.25);color:#e2e8f0;padding:4px 8px;font-size:0.8rem;">
-              <option value="">All Projects</option>
-              <option value="SYN-DES-001">SYN-DES-001</option>
-              <option value="SYN-DES-002">SYN-DES-002</option>
-              <option value="SYN-DES-003">SYN-DES-003</option>
-              <option value="SYN-DES-004">SYN-DES-004</option>
-              <option value="SYN-CON-005">SYN-CON-005</option>
-              <option value="SYN-CON-006">SYN-CON-006</option>
-              <option value="SYN-CON-007">SYN-CON-007</option>
-              <option value="SYN-CON-008">SYN-CON-008</option>
-              <option value="SYN-CMB-009">SYN-CMB-009</option>
-              <option value="SYN-CMB-010">SYN-CMB-010</option>
-              <option value="SYN-CMB-011">SYN-CMB-011</option>
-              <option value="SYN-CMB-012">SYN-CMB-012</option>
-            </select>
-          </div>
-        </div>
-        <div class="panel" style="display:flex;flex-direction:column;height:520px;">
-          <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
-            <div class="chat-msg-system" style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:8px;">
-              Lin is ready. Ask about any project or the full portfolio.
-            </div>
-          </div>
-          <div style="border-top:1px solid rgba(0,229,255,.12);padding:12px;display:flex;gap:8px;align-items:center;">
-            <input id="chatInput" type="text" placeholder="e.g. Which projects are red and why?"
-              style="flex:1;background:#0d1117;border:1px solid rgba(0,229,255,.25);color:#e2e8f0;padding:10px 14px;font-size:0.85rem;outline:none;"
-              onkeydown="if(event.key==='Enter')sendChatMessage()"/>
-            <button id="chatSendBtn" class="primary-action" onclick="sendChatMessage()">Send</button>
-            <button id="chatVoiceBtn"
-              style="background:transparent;border:1px solid rgba(0,229,255,.25);color:#00e5ff;padding:10px 14px;cursor:pointer;font-size:1rem;"
-              title="Voice input" onclick="toggleVoiceInput()">🎤</button>
-          </div>
-        </div>
-        <div class="panel" style="margin-top:12px;">
-          <p class="eyebrow" style="margin:0 0 8px">Suggested Questions</p>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="chatSuggestions">
-            <button class="filter-chip" onclick="askSuggestion(this)">Which projects are RED?</button>
-            <button class="filter-chip" onclick="askSuggestion(this)">What is the highest P80 EAC exposure?</button>
-            <button class="filter-chip" onclick="askSuggestion(this)">Which projects need governance review?</button>
-            <button class="filter-chip" onclick="askSuggestion(this)">Summarize portfolio health</button>
-            <button class="filter-chip" onclick="askSuggestion(this)">Which project has most flagged RFIs?</button>
-            <button class="filter-chip" onclick="askSuggestion(this)">What is driving risk in RED projects?</button>
-          </div>
-        </div>
-      </section>
     </main>
 
     <div class="footer"><div class="footer-main">Multi-Model Simulation Demo for Doctor of Engineering in Engineering Management Praxis by Nyan Lin Tun</div><div class="footer-disclaimer">Multi-model simulation prepared for Doctor of Engineering praxis in Engineering Management at The George Washington University, School of Engineering and Applied Science. This demo uses synthetic project folders and multi-model simulations to demonstrate multi-model capability of hybrid Monte Carlo/Bayesian EVM forecasting, SPC/CUSUM anomaly simulation, document-risk extraction, signal synthesis, and governance recommendation logic. It is not an official George Washington University system, not a commercial product, and not intended for public release, procurement, operations, or official project-control use.</div></div>
