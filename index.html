@@ -18,7 +18,8 @@
         <span class="mark">LIN PROJECT RADAR</span>
         <span class="sub">PCEIF console</span>
       </div>
-      <span class="clock" id="utc-clock" aria-label="Coordinated Universal Time">--:--:-- UTC</span>
+      <span class="clock" id="tz-clock" aria-label="Current time in selected timezone">--:--:--</span>
+      <select id="tz-select" class="tz-select" aria-label="Timezone"></select>
       <div class="theme-switch" role="group" aria-label="Visual theme">
         <button data-set-theme="aviation">Aviation</button>
         <button data-set-theme="clean" class="active">Clean</button>
@@ -26,6 +27,15 @@
       </div>
       <span class="synthetic-badge">SYNTHETIC DEMONSTRATION DATA</span>
     </header>
+
+    <nav class="page-nav" aria-label="Site pages">
+      <button data-nav="radar" class="active">Radar console</button>
+      <button data-nav="modules">Modules</button>
+      <button data-nav="ingest">Ingest &amp; Projects</button>
+      <button data-nav="knowledge">Knowledge</button>
+    </nav>
+
+    <section class="page" data-page="radar">
 
     <section class="intro">
       <p class="eyebrow">Signal to action</p>
@@ -64,6 +74,35 @@
 
     </div>
 
+    </section><!-- /page radar -->
+
+    <section class="page" data-page="modules" hidden>
+      <section class="intro">
+        <p class="eyebrow">Five modules</p>
+        <h1>The PCEIF model stack, explained</h1>
+        <p>Each module shows what it measures, the rule that fired on the synthetic portfolio, and an illustrative graph. Module 05 — the ABM governance layer — calls the same decision.js functions that drive the decision card.</p>
+      </section>
+      <div id="modules-root"></div>
+    </section>
+
+    <section class="page" data-page="ingest" hidden>
+      <section class="intro">
+        <p class="eyebrow">Ingest &amp; projects</p>
+        <h1>Create projects and ingest documents — with human approval</h1>
+        <p>Everything here is client-side and synthetic. Document extraction runs visible keyword rules and proposes a signal delta; nothing changes until a human approves it.</p>
+      </section>
+      <div id="ingest-root"></div>
+    </section>
+
+    <section class="page" data-page="knowledge" hidden>
+      <section class="intro">
+        <p class="eyebrow">Knowledge library</p>
+        <h1>Methods, terms, and how to use this demo</h1>
+        <p>The curated reference behind the guided assistant — the chatbot answers only from this content, so the two stay consistent.</p>
+      </section>
+      <div id="knowledge-root"></div>
+    </section>
+
     <footer class="foot">
       Demonstration only. All project data is synthetic; no real project, agency, employer, contractor, or vendor is referenced.
       This is not a validated production system: it does not validate predictive accuracy, diagnose live projects, or issue contractual direction.
@@ -75,6 +114,11 @@
 
   <script src="assets/js/data.js"></script>
   <script src="assets/js/decision.js"></script>
+  <script src="assets/js/tz.js"></script>
+  <script src="assets/js/knowledge.js"></script>
+  <script src="assets/js/modules.js"></script>
+  <script src="assets/js/ingest.js"></script>
+  <script src="assets/js/assistant.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>

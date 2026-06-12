@@ -340,6 +340,10 @@
         recordedAt: new Date().toISOString()
       };
       const record = buildAuditRecord(p, d, reviewerInput);
+      // Display timestamps in the selected timezone; the record's
+      // exported_at / recorded_at stay UTC ISO for integrity.
+      record.exported_at_local = LinTZ.format(record.exported_at);
+      record.timezone = LinTZ.get();
       const blob = new Blob([JSON.stringify(record, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -365,7 +369,7 @@
           <div class="log-top"><span class="log-proj">${e.project}</span><span class="log-state state-${e.state.toLowerCase().replace("-review","")}">${e.state}</span></div>
           <div class="log-action">${e.action}</div>
           <div class="log-rationale">“${e.rationale}”</div>
-          <div class="log-time">${new Date(e.recordedAt).toLocaleString()}${e.fairnessAcknowledged ? " · fairness gate acknowledged" : ""}</div>
+          <div class="log-time">${LinTZ.format(e.recordedAt)}${e.fairnessAcknowledged ? " · fairness gate acknowledged" : ""}</div>
         </div>`).join("");
   }
 
@@ -389,16 +393,46 @@
     try { localStorage.setItem("lin-radar-theme", theme); } catch (e) {}
   }
 
-  /* ---------- clock ---------- */
+  /* ---------- clock (timezone-aware via tz.js) ---------- */
   function startClock() {
-    const node = $("#utc-clock");
-    const tick = () => {
-      const d = new Date();
-      node.textContent = d.toISOString().slice(11, 19) + " UTC";
-    };
+    const node = $("#tz-clock");
+    const tick = () => { node.textContent = LinTZ.clock(); };
     tick();
     setInterval(tick, 1000);
+    document.addEventListener("lin:tz-changed", () => { tick(); renderDecisionLog(); });
   }
+
+  function wireTzSelect() {
+    const sel = $("#tz-select");
+    if (!sel) return;
+    sel.innerHTML = LinTZ.zones.map((z) =>
+      `<option value="${z.id}"${z.id === LinTZ.get() ? " selected" : ""}>${z.label}</option>`).join("");
+    sel.addEventListener("change", () => LinTZ.set(sel.value));
+  }
+
+  /* ---------- page navigation ---------- */
+  function showPage(page) {
+    document.querySelectorAll(".page").forEach((s) =>
+      s.toggleAttribute("hidden", s.dataset.page !== page));
+    document.querySelectorAll("[data-nav]").forEach((b) =>
+      b.classList.toggle("active", b.dataset.nav === page));
+    // (re)render content pages so they reflect the latest portfolio state
+    if (page === "modules" && window.LinModules) LinModules.renderModulesPage();
+    if (page === "knowledge" && window.LinKnowledge) LinKnowledge.renderKnowledgePage();
+    if (page === "ingest" && window.LinIngest) LinIngest.renderIngestPage();
+    window.scrollTo({ top: 0 });
+  }
+
+  function wireNav() {
+    document.querySelectorAll("[data-nav]").forEach((b) =>
+      b.addEventListener("click", () => showPage(b.dataset.nav)));
+  }
+
+  /* ---------- public API (used by ingest.js) ---------- */
+  window.LinApp = {
+    refresh() { buildRadar(); buildFallbackList(); },
+    selectProject(id) { showPage("radar"); selectProject(id); }
+  };
 
   /* ---------- init ---------- */
   function init() {
@@ -409,10 +443,16 @@
     try { saved = localStorage.getItem("lin-radar-theme") || "clean"; } catch (e) {}
     applyTheme(saved);
 
+    // merge user-created projects (localStorage) before first render
+    if (window.LinIngest) LinIngest.mergeUserProjects();
+
+    wireNav();
+    wireTzSelect();
     buildRadar();
     buildFallbackList();
     renderDecisionLog();
     startClock();
+    showPage("radar");
 
     // default selection: the flagship red-review fairness case
     selectProject("SYN-CON-005");

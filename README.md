@@ -38,6 +38,24 @@ Select any project (on the scope or in the equivalent list) to see:
 functions with no DOM dependencies. This is deliberate: the governance logic is
 explicit, readable rules — not model output and not informal judgment.
 
+## Pages & features
+
+- **Radar console** — the scope, signal ledger, decision card, and decision log.
+- **Modules** — the five PCEIF modules (Hybrid Dynamic Simulation, SPC/CUSUM,
+  Document-Risk Extraction, Signal Synthesis, and the ABM governance layer),
+  each with a plain-language explanation, the rule that fired, and an
+  **illustrative** graph of the synthetic data. Module 05 calls the same
+  `decision.js` functions that drive the decision card — the rules are never
+  duplicated.
+- **Ingest & Projects** — create a synthetic project (client-side, persisted in
+  localStorage) or run visible keyword-rule extraction on pasted/uploaded text.
+  Proposed signal deltas require human Approve/Reject; every event is logged.
+- **Knowledge** — the curated method library and term lens. The floating
+  **Lin Guide** assistant (bottom-right, every page) is a scripted helper that
+  answers only from this library — it is not a live AI and makes no API calls.
+- **Timezone** — top-bar selector, default Eastern (EST/EDT), persisted.
+  Displayed timestamps follow the selection; audit JSON always keeps UTC ISO.
+
 ## Themes
 
 Three visual systems over the same structure, switchable in the top bar:
@@ -60,8 +78,13 @@ Three visual systems over the same structure, switchable in the top bar:
 index.html
 assets/css/radar.css      visual system + three themes
 assets/js/data.js         synthetic project portfolio
-assets/js/decision.js     PCEIF governance rules (pure functions)
-assets/js/app.js          radar rendering, ledger, decision card, audit export
+assets/js/decision.js     PCEIF rules + ABM governance layer (pure functions)
+assets/js/app.js          radar rendering, page orchestration, decision card
+assets/js/modules.js      the five module explanations + illustrative graphs
+assets/js/ingest.js       create-project + doc ingest (client-side, human-approved)
+assets/js/assistant.js    floating scripted help assistant (no LLM, no API)
+assets/js/knowledge.js    knowledge-library content + term lens
+assets/js/tz.js           timezone selector (default EST/EDT)
 ```
 
 ## Run / deploy
