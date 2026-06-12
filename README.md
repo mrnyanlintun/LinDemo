@@ -6,62 +6,70 @@ EVM Intelligence Framework — developed as part of a Doctor of Engineering prax
 
 ## What it demonstrates
 
-How a project's multi-model signals become a **governed management decision**:
+PCEIF is a signal-to-action governance framework for public AEC capital programs.
+This site shows the workflow it governs: how a synthetic project's multi-model
+signals become a **governed management decision** with explicit authority,
+documentation, and a contractor fairness gate.
 
-| Signal | Method |
-|---|---|
-| EVM | Earned Value Management (CPI / SPI vs. baseline) |
-| Monte Carlo | P80 EAC overrun and milestone-delay probability (5,000 iterations) |
-| CUSUM / SPC | Cumulative-sum drift detection against a control threshold |
-| Document risk | RFI / submittal evidence scoring with source excerpts |
+The **radar scope is the interface**, not decoration:
 
-The radar scope encodes the portfolio: **distance from center = drift from
-baseline**, **angle = delivery sector** (Design / Construction / Combined).
-Selecting a blip loads the signal ledger and the PCEIF decision card, which
-derives a recommended action, the responsible authority, and the required
-documentation from explicit, readable rules in
-[`assets/js/decision.js`](assets/js/decision.js).
+- **Distance from center** = drift from baseline (healthy projects sit near
+  center; deteriorating ones drift toward the red rim).
+- **Angle** = delivery sector (Design / Construction / Combined).
+- **Blip color** = derived health state (Green / Amber / Red-review).
 
-When a red-review implicates delivery responsibility, a **contractor fairness
-gate** appears as a mandatory workflow step: the reviewer must acknowledge that
-a contractor response opportunity will be provided before any formal action.
-Recorded decisions (with reviewer rationale and ISO timestamp) can be exported
-as audit JSON.
+Select any project (on the scope or in the equivalent list) to see:
 
-## Academic boundary
+1. **Signal ledger** — EVM, Monte Carlo forecast, SPC/CUSUM anomaly, and
+   document-risk signals, each with status, key metric, method, and evidence.
+2. **Signal-conflict classification** — disagreement between signal classes is
+   surfaced, not averaged away.
+3. **PCEIF governance decision card** — derived health state, recommended action,
+   authority role, documentation required, and (where applicable) a contractor
+   fairness gate that **blocks recording** until contractor response opportunity
+   is acknowledged. A named reviewer must enter a rationale before any decision
+   is recorded.
+4. **Audit export** — downloads a JSON record of the signal package, derived
+   decision, reviewer rationale, fairness acknowledgement, and timestamp.
 
-- **All data is synthetic.** No real project, agency, employer, contractor, or
-  vendor is represented. Project codes follow the `SYN-*` convention.
-- **No predictive-accuracy validation has been performed.** The decision rules
-  are illustrative of the framework's structure, not validated thresholds.
-- **Human approval is required for every action.** The system recommends and
-  records; it does not decide.
-- This is **not a production system**.
+## The decision logic is the point
 
-## Architecture
+`assets/js/decision.js` contains the PCEIF Layer-2 rules as pure, commented
+functions with no DOM dependencies. This is deliberate: the governance logic is
+explicit, readable rules — not model output and not informal judgment.
 
-Pure static HTML/CSS/JS. No build step, no backend, no LLM calls, no analytics,
-no external JS dependencies. The only external resource is Google Fonts.
+## Themes
+
+Three visual systems over the same structure, switchable in the top bar:
+**Clean** (audit matrix, default), **Aviation** (blueprint), **Digital Twin**
+(industrial). Theme preference persists in `localStorage`.
+
+## Boundaries
+
+- **Synthetic demonstration data only.** No real project, agency, employer,
+  contractor, or vendor is referenced.
+- **No backend, no LLM calls, no analytics, no tracking.** Pure static
+  HTML/CSS/JS. The only external resource is Google Fonts.
+- Not a validated production system: it does not validate predictive accuracy,
+  diagnose live projects, or issue contractual direction. Every recommended
+  action requires named human approval before it is recorded.
+
+## Structure
 
 ```
 index.html
-assets/css/radar.css      — aviation-console theme
-assets/js/data.js         — synthetic project roster
-assets/js/decision.js     — PCEIF decision rules (pure functions, no DOM)
-assets/js/app.js          — radar rendering, interactions, audit export
+assets/css/radar.css      visual system + three themes
+assets/js/data.js         synthetic project portfolio
+assets/js/decision.js     PCEIF governance rules (pure functions)
+assets/js/app.js          radar rendering, ledger, decision card, audit export
 ```
 
-## Run locally
+## Run / deploy
 
-Open `index.html` directly in a browser (`file://` works) or serve the folder:
+Open `index.html` directly (works from `file://`), or serve the folder. For
+GitHub Pages, push to the configured branch with a `.nojekyll` file present;
+all paths are relative so it works under a project subpath.
 
-```
-python -m http.server 8000
-```
+---
 
-## Deploy to GitHub Pages
-
-1. Push this repository to GitHub.
-2. Settings → Pages → Source: *Deploy from a branch* → select the branch and `/ (root)`.
-3. All asset paths are relative, so the site works from a project subpath
-   (e.g. `https://<user>.github.io/<repo>/`) without configuration.
+PCEIF L2-v0.5-demo

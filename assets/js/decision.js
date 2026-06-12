@@ -1,190 +1,162 @@
-/* decision.js — PCEIF Decision Rules
- * Public Capital EVM Intelligence Framework, L2-v0.5-demo
- *
- * Pure functions only. No DOM access. No side effects.
- * This file implements the signal-to-action governance matrix described in
- * the PCEIF praxis (GWU Engineering Management). It is intentionally readable:
- * the transparency of the rules is the academic contribution, not their
- * algorithmic sophistication.
- *
- * All data is synthetic demonstration data only.
- */
+/* ============================================================
+   Lin Project Radar — decision.js
+   PCEIF Layer-2 governance rules (pure functions, no DOM)
+   ------------------------------------------------------------
+   This file is intentionally readable: it is the demonstration
+   that PCEIF decision logic is explicit, auditable rules — not
+   model output and not informal judgment. Every function here
+   is deterministic and side-effect free.
+
+   Plain globals (not ES modules) so the site also runs from
+   file:// where module imports are blocked by CORS.
+   ============================================================ */
 
 const PCEIF_VERSION = "L2-v0.5-demo";
-const DATA_BOUNDARY = "Synthetic demonstration data only; not a validated production system.";
+const DATA_BOUNDARY =
+  "Synthetic demonstration data only; not a validated production system.";
 
-/**
- * Count how many of the four signals are at a given status level.
- */
-function countSignalsAtStatus(signals, status) {
-  return ["evm", "mc", "cusum", "doc"].filter(k => signals[k].status === status).length;
+/* ------------------------------------------------------------
+   1. Signal status extraction
+   ------------------------------------------------------------ */
+function signalStatuses(project) {
+  const s = project.signals;
+  return { evm: s.evm.status, mc: s.mc.status, cusum: s.cusum.status, doc: s.doc.status };
 }
 
-/**
- * Determine the conflict pattern label for this project's signal combination.
- *
- * Patterns (in precedence order):
- *   "Multi-signal red-review"    — ≥2 red signals, or CUSUM breach + MC red
- *   "Anomaly without narrative"  — CUSUM breached but doc risk is green (drift unnarrated)
- *   "Forecast ahead of status"   — MC red while EVM is green or amber (forecast worse than reported)
- *   "Leading document risk"      — doc amber/red while EVM is green
- *   "Agreement — low risk"       — all signals green (or all amber, consistent)
- */
-function classifyConflict(signals) {
-  const redCount = countSignalsAtStatus(signals, "red");
-  const cusumBreached = signals.cusum.breached;
-  const mcRed = signals.mc.status === "red";
-  const evmGreen = signals.evm.status === "green";
-  const evmAmber = signals.evm.status === "amber";
-  const docGreen = signals.doc.status === "green";
-  const docElevated = signals.doc.status === "amber" || signals.doc.status === "red";
+function countStatus(statuses, level) {
+  return Object.values(statuses).filter((v) => v === level).length;
+}
 
-  if (redCount >= 2 || (cusumBreached && mcRed)) {
-    return "Multi-signal red-review";
-  }
-  if (cusumBreached && docGreen) {
+/* ------------------------------------------------------------
+   2. Signal-conflict classification
+   ------------------------------------------------------------
+   PCEIF surfaces disagreement between signal classes instead of
+   averaging it away. Precedence order matters and is deliberate:
+
+   (1) Multi-signal red-review   — two or more red signals: the
+       severity question dominates any single-conflict label.
+   (2) Anomaly without narrative — trend rules (CUSUM) breached
+       while the document record offers no explanation. The gap
+       between the numbers and the narrative IS the finding.
+   (3) Forecast ahead of status  — probabilistic forecast is red
+       while current EVM is not: foresight precedes variance.
+   (4) Leading document risk     — text evidence (RFIs, QC,
+       submittals, procurement) deteriorates before CPI/SPI.
+   (5) Agreement — low risk      — every signal class is green.
+   (6) Mixed early warning       — residual amber combinations.
+   ------------------------------------------------------------ */
+function classifyConflict(project) {
+  const s = signalStatuses(project);
+  const reds = countStatus(s, "red");
+
+  if (reds >= 2) return "Multi-signal red-review";
+  if (project.signals.cusum.breached && s.doc === "green")
     return "Anomaly without narrative";
-  }
-  if (mcRed && (evmGreen || evmAmber)) {
-    return "Forecast ahead of status";
-  }
-  if (docElevated && evmGreen) {
+  if (s.mc === "red" && s.evm !== "red") return "Forecast ahead of status";
+  if ((s.doc === "amber" || s.doc === "red") && s.evm === "green")
     return "Leading document risk";
-  }
-  return "Agreement — low risk";
+  if (Object.values(s).every((v) => v === "green")) return "Agreement — low risk";
+  return "Mixed early warning";
 }
 
-/**
- * Derive the overall health state from signal statuses.
- * Worst signal wins, with a CUSUM breach escalating amber → red.
- */
-function deriveHealthState(signals) {
-  const redCount = countSignalsAtStatus(signals, "red");
-  const amberCount = countSignalsAtStatus(signals, "amber");
-  const cusumBreached = signals.cusum.breached;
-  const mcRed = signals.mc.status === "red";
+/* ------------------------------------------------------------
+   3. Health-state synthesis
+   ------------------------------------------------------------
+   Green       — all signal classes green.
+   Red-review  — two or more red signals, OR a breached trend
+                 rule combined with a red probabilistic forecast.
+                 "Red-review" deliberately means: the evidence
+                 package has crossed the threshold for accountable
+                 HUMAN review. It never means automatic action.
+   Amber       — every other early-warning combination.
+   ------------------------------------------------------------ */
+function deriveHealthState(project) {
+  const s = signalStatuses(project);
+  const reds = countStatus(s, "red");
+  const ambers = countStatus(s, "amber");
 
-  if (redCount >= 2 || (cusumBreached && mcRed)) return "red";
-  if (redCount === 1 || amberCount >= 1 || cusumBreached) return "amber";
-  return "green";
+  if (reds === 0 && ambers === 0) return "Green";
+  if (reds >= 2 || (project.signals.cusum.breached && s.mc === "red"))
+    return "Red-review";
+  return "Amber";
 }
 
-/**
- * Main decision function — implements the PCEIF governance matrix.
- *
- * Returns:
- *   healthState            — "green" | "amber" | "red"
- *   conflictType           — conflict pattern label
- *   action                 — recommended management action (text)
- *   authority              — role(s) responsible for this decision
- *   documentation          — list of required documentation items
- *   fairnessGateRequired   — boolean; true when delivery responsibility is implicated
- */
+/* ------------------------------------------------------------
+   4. Decision derivation — the PCEIF escalation matrix
+   ------------------------------------------------------------
+   Maps (health state x conflict type x fairness sensitivity) to
+   a RECOMMENDED action, the authority role entitled to act, the
+   documentation required, and whether the contractor fairness
+   gate must be satisfied before any formal step.
+
+   The output is a recommendation. A named human reviewer must
+   record a rationale before the decision enters the audit log,
+   and the fairness gate — where required — blocks recording
+   until contractor response opportunity is acknowledged.
+   ------------------------------------------------------------ */
 function deriveDecision(project) {
-  const { signals, fairnessSensitive } = project;
-  const healthState = deriveHealthState(signals);
-  const conflictType = classifyConflict(signals);
-  const redCount = countSignalsAtStatus(signals, "red");
-  const cusumBreached = signals.cusum.breached;
-  const mcRed = signals.mc.status === "red";
+  const healthState = deriveHealthState(project);
+  const conflictType = classifyConflict(project);
+  const fairnessGateRequired =
+    healthState === "Red-review" && project.fairnessSensitive === true;
 
-  // Fairness gate is required when the project is marked fairness-sensitive AND
-  // the derived state is red-review. This is a workflow step, not a metric.
-  const fairnessGateRequired = fairnessSensitive && healthState === "red";
+  let action, authority, documentation;
 
-  // ── Green: all signals green ───────────────────────────────────────────────
-  if (healthState === "green") {
-    return {
-      healthState: "green",
-      conflictType,
-      action: "Continue routine monitoring. No escalation required. Validate assumptions at next data date.",
-      authority: "PM / Controls Lead",
-      documentation: [
-        "Monthly controls report — no exception items",
-        "Confirm next data date and reporting cycle"
-      ],
-      fairnessGateRequired: false
-    };
-  }
-
-  // ── Amber: single amber signal, leading doc risk, or forecast ahead ────────
-  if (healthState === "amber") {
-    let action = "Issue early-warning notification. Update risk register with current signal evidence.";
-    let documentation = [
-      "Early-warning notification (written, dated)",
-      "Risk register update with signal basis",
-      "Next review date confirmed in writing"
-    ];
-
-    if (conflictType === "Leading document risk") {
-      action = "Issue early-warning notification. Initiate document-risk watch: track RFI/submittal resolution trajectory. EVM baseline remains acceptable; document signals are leading indicators.";
-      documentation = [
-        "Early-warning notification citing document-risk signal",
-        "RFI/submittal log snapshot (dated)",
-        "Risk register entry — leading indicator category",
-        "Resolution timeline agreed with responsible party"
-      ];
-    }
-
+  if (healthState === "Green") {
+    action = "Routine monitoring";
+    authority = "Project manager / Controls lead";
+    documentation = "Monthly signal log entry";
+  } else if (healthState === "Red-review") {
+    action = fairnessGateRequired
+      ? "Request contractor explanation and recovery-plan review — fairness gate required before any formal action"
+      : "Recovery-plan review and management escalation";
+    authority = fairnessGateRequired
+      ? "Program director / PMO with contract-administration awareness"
+      : "Program director / PMO lead";
+    documentation =
+      "Full signal package, assigned owner, rationale, response timeframe, audit record";
+  } else {
+    // Amber sub-cases keyed to the conflict type
     if (conflictType === "Forecast ahead of status") {
-      action = "Investigate Monte Carlo forecast assumptions. Review schedule risk inputs and milestone confidence basis. Do not dismiss forecast divergence without documented rationale.";
-      documentation = [
-        "Forecast assumption review memo",
-        "Schedule risk input log (dated)",
-        "Written rationale if forecast divergence is accepted or rejected",
-        "Risk register update"
-      ];
+      action = "Investigate forecast assumptions and mitigation options";
+    } else if (conflictType === "Anomaly without narrative") {
+      action = "Controls review — request explanation for unexplained trend drift";
+    } else if (conflictType === "Leading document risk") {
+      action = "Early-warning review; verify document evidence; update risk register";
+    } else {
+      action = "Early-warning review; update risk register; set follow-up date";
     }
-
-    if (conflictType === "Anomaly without narrative") {
-      action = "CUSUM drift detected without supporting document evidence. Request narrative explanation from project team before next reporting cycle.";
-      documentation = [
-        "Written narrative from project team explaining drift signal",
-        "Risk register update",
-        "Early-warning notification if narrative is not received within agreed period"
-      ];
-    }
-
-    return {
-      healthState: "amber",
-      conflictType,
-      action,
-      authority: "PM + Controls Lead",
-      documentation,
-      fairnessGateRequired: false
-    };
+    authority = "Project manager + Project controls lead";
+    documentation = "Risk-register update, rationale, follow-up date";
   }
 
-  // ── Red-review: ≥2 red signals, or CUSUM breach + MC red ──────────────────
-  let action = "Initiate red-review. Request formal contractor explanation and recovery plan. Do not take formal contractual action before review is complete.";
-  let documentation = [
-    "Formal notice of red-review status (written, dated)",
-    "Contractor explanation request (written, response period stated)",
-    "Recovery plan submission requirements",
-    "Program director briefing note",
-    "Controls report with full signal package"
-  ];
+  return { healthState, conflictType, action, authority, documentation, fairnessGateRequired };
+}
 
-  if (fairnessGateRequired) {
-    action = "Initiate red-review. Request formal contractor explanation and recovery plan. A contractor response opportunity MUST be provided and documented before any formal contractual action is taken. See fairness gate step below.";
-    documentation = [
-      "Formal notice of red-review status (written, dated)",
-      "Contractor explanation request (written, response period stated — minimum period per contract terms)",
-      "Contractor response on file before any formal action",
-      "Recovery plan submission requirements",
-      "Program director + contract administrator briefing note",
-      "Controls report with full signal package including fairness-gate acknowledgement"
-    ];
-  }
-
+/* ------------------------------------------------------------
+   5. Audit-record assembly
+   ------------------------------------------------------------ */
+function buildAuditRecord(project, decision, reviewerInput) {
   return {
-    healthState: "red",
-    conflictType,
-    action,
-    authority: fairnessGateRequired
-      ? "Program Director + Contract Administrator awareness"
-      : "Program Director / PMO",
-    documentation,
-    fairnessGateRequired
+    pceif_version: PCEIF_VERSION,
+    data_boundary: DATA_BOUNDARY,
+    exported_at: new Date().toISOString(),
+    project_id: project.id,
+    project_name: project.name,
+    reporting_period: project.reportingPeriod,
+    signal_package: project.signals,
+    derived_decision: {
+      health_state: decision.healthState,
+      conflict_type: decision.conflictType,
+      recommended_action: decision.action,
+      authority: decision.authority,
+      documentation_required: decision.documentation,
+      fairness_gate_required: decision.fairnessGateRequired
+    },
+    human_review: {
+      rationale: reviewerInput.rationale,
+      fairness_gate_acknowledged: reviewerInput.fairnessAcknowledged === true,
+      recorded_at: reviewerInput.recordedAt
+    }
   };
 }
