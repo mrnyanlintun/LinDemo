@@ -115,7 +115,7 @@ const LIN_PROJECTS = [
   },
   {
     id: "SYN-CMB-008",
-    name: "Central Plant Upgrade — Combined Delivery",
+    name: "Central Plant Upgrade — Hybrid Delivery",
     sector: "combined",
     health: 70,
     reportingPeriod: "2026-06",

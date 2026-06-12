@@ -46,9 +46,9 @@
     },
     {
       id: "radar",
-      keywords: ["radar", "blip", "scope", "circle", "ring", "sector", "distance", "center"],
-      title: "Reading the radar",
-      body: "Each blip is a synthetic project. Distance from center = drift from baseline (healthy projects sit near center). Angle = delivery sector: Design, Construction, or Combined. Blip color = derived health state. Click a blip — or use the equivalent list below the scope — to load its signal ledger and decision card."
+      keywords: ["radar", "portfolio", "blip", "scope", "circle", "ring", "sector", "distance", "center"],
+      title: "Reading the portfolio scope",
+      body: "Each blip is a synthetic project. Distance from center = drift from baseline (healthy projects sit near center). Angle = delivery sector: Design, Construction, or Hybrid. Blip color = derived health state. Click a blip — or use the equivalent list below the scope — to open that project's Detail page (ledger, decision card, and all five modules for that project)."
     },
     {
       id: "module01",
@@ -66,7 +66,7 @@
       id: "module03",
       keywords: ["module 03", "module 3", "document", "doc risk", "rfi", "submittal", "extraction", "keyword"],
       title: "Module 03 — Document-Risk Extraction",
-      body: "Module 03 scores risk language in project records (RFIs, submittals, QC comments, procurement notes) using visible keyword rules — the same rules the Ingest page runs. The score and the matched excerpt feed the signal ledger. In this demo extraction is rule-based and transparent; there is no live NLP or LLM."
+      body: "Module 03 scores risk language in project records (RFIs, submittals, QC comments, procurement notes) using visible keyword rules — the same rules the Manage Projects page runs. The score and the matched excerpt feed the signal ledger. In this demo extraction is rule-based and transparent; there is no live NLP or LLM."
     },
     {
       id: "module04",
@@ -78,7 +78,7 @@
       id: "module05",
       keywords: ["module 05", "module 5", "abm", "agent", "governance layer", "decision rules", "authority"],
       title: "Module 05 — ABM governance layer",
-      body: "Module 05 is the agent-based governance layer: each authority role (PM, controls lead, program director) is an agent with explicit decision rules. Those rules live in decision.js as pure, readable functions — deriveHealthState, classifyConflict, and deriveDecision — and the Modules page calls them directly. The decision card you see on the radar page IS this module's output."
+      body: "Module 05 is the agent-based governance layer: each authority role (PM, controls lead, program director) is an agent with explicit decision rules. Those rules live in decision.js as pure, readable functions — deriveHealthState, classifyConflict, and deriveDecision — and the Modules page calls them directly. The decision card you see on the Portfolio and Project Detail pages IS this module's output."
     },
     {
       id: "fairness",
@@ -96,13 +96,13 @@
       id: "create",
       keywords: ["create project", "new project", "add project", "generate"],
       title: "Creating a project",
-      body: "On the Ingest page, set a name and delivery type (Design / Construction / Combined). The app generates the next SYN code, seeds baseline synthetic signals, runs the project through the same decision.js rules, and plots it on the radar immediately. Created projects persist in your browser's localStorage and are synthetic like everything else here."
+      body: "On the Manage Projects page, set a name and delivery type (Design / Construction / Hybrid). The app generates the next SYN code, seeds baseline synthetic signals, runs the project through the same decision.js rules, and plots it on the portfolio scope immediately. Created projects persist in your browser's localStorage and are synthetic like everything else here."
     },
     {
       id: "archive",
       keywords: ["archive", "archived", "restore", "unarchive", "remove project", "hide project"],
       title: "Archiving a project",
-      body: "On the Projects page, each active project has an Archive action. Archiving removes it from the radar and all active views without deleting it — it moves to the Archived list, persists in localStorage, and can be restored with one click. Every archive and restore is logged in the project event log."
+      body: "On the Manage Projects page, each active project has an Archive action. Archiving removes it from the portfolio scope and all active views without deleting it — it moves to the Archived list, persists in localStorage, and can be restored with one click. Every archive and restore is logged in the project event log."
     },
     {
       id: "ingest",
