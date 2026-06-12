@@ -123,7 +123,7 @@
       num: "03",
       title: "Document-Risk Extraction",
       method: "Visible keyword / rule extraction over project records",
-      explain: "RFIs, submittals, QC comments, and procurement notes often deteriorate before CPI/SPI do. This module scores risk language with transparent keyword rules — the same rules the Ingest page runs — and carries the matched excerpt as evidence. No NLP model, no LLM: every match is inspectable.",
+      explain: "RFIs, submittals, QC comments, and procurement notes often deteriorate before CPI/SPI do. This module scores risk language with transparent keyword rules — the same rules the Manage Projects page runs — and carries the matched excerpt as evidence. No NLP model, no LLM: every match is inspectable.",
       rule: "Rule fired: score ≥ 0.30 → amber; ≥ 0.70 → red. Source file and matched excerpt are shown in the signal ledger.",
       charts:
         `<p class="mod-chart-label">Illustrative view — document-risk score by project</p>` +
@@ -218,7 +218,7 @@
 
   const BANNER = `<p class="mod-banner">All graphs below are <strong>illustrative views of the synthetic demonstration data</strong> — they are not live or validated model output.</p>`;
 
-  /* Whole-portfolio overview (Modules nav item) */
+  /* Whole-portfolio overview (Signals nav item; internal key stays "modules") */
   function renderModulesPage() {
     const root = document.getElementById("modules-root");
     if (!root) return;

@@ -42,8 +42,8 @@ explicit, readable rules — not model output and not informal judgment.
 
 - **Portfolio** — the radar scope, signal ledger, decision card, and decision log.
 - **Project Detail** — click any blip or list row to drill into one project: its ledger,
-  decision card, and all five modules computed for that project alone.
-- **Modules** — the five PCEIF modules (Hybrid Dynamic Simulation, SPC/CUSUM,
+  decision card, and all five signals computed for that project alone.
+- **Signals** — the five PCEIF signal modules (Hybrid Dynamic Simulation, SPC/CUSUM,
   Document-Risk Extraction, Signal Synthesis, and the ABM governance layer),
   each with a plain-language explanation, the rule that fired, and an
   **illustrative** graph of the synthetic data. Module 05 calls the same
@@ -85,7 +85,7 @@ assets/css/radar.css      visual system + three themes
 assets/js/data.js         synthetic project portfolio
 assets/js/decision.js     PCEIF rules + ABM governance layer (pure functions)
 assets/js/app.js          radar rendering, page orchestration, decision card
-assets/js/modules.js      the five module explanations + illustrative graphs
+assets/js/modules.js      the five signal-module explanations + illustrative graphs
 assets/js/ingest.js       create-project + doc ingest (client-side, human-approved)
 assets/js/assistant.js    floating scripted help assistant (no LLM, no API)
 assets/js/knowledge.js    knowledge-library content + term lens

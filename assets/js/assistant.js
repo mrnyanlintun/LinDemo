@@ -123,7 +123,7 @@
     // 3. honest out-of-scope
     return {
       title: "Outside my script",
-      body: "I'm a scripted guide — I only answer from this demo's knowledge library (PCEIF concepts, the five modules, the fairness gate, EVM/CUSUM/Monte Carlo definitions, and how to use each page). Try the Knowledge page for the full reference, or ask me one of the suggested questions."
+      body: "I'm a scripted guide — I only answer from this demo's knowledge library (PCEIF concepts, the five signals, the fairness gate, EVM/CUSUM/Monte Carlo definitions, and how to use each page). Try the Knowledge page for the full reference, or ask me one of the suggested questions."
     };
   }
 

@@ -44,7 +44,7 @@
          <section class="panel detail-ledger" aria-label="Signal ledger (project detail)"></section>
          <section class="panel detail-decision" aria-label="PCEIF governance decision (project detail)"></section>
        </div>
-       <h2 class="detail-mods-h">Five modules — computed for ${esc(p.id)}</h2>
+       <h2 class="detail-mods-h">Five signals — computed for ${esc(p.id)}</h2>
        <div class="detail-modules"></div>`;
 
     // Reuse the shared renderers, scoped to this page's containers.
