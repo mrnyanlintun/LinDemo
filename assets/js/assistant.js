@@ -141,7 +141,7 @@
          <div class="la-head">
            <div>
              <strong>Lin Guide</strong>
-             <span class="la-tag">Scripted help — not a live AI</span>
+             <span class="la-tag">Scripted help</span>
            </div>
            <button id="la-close" class="la-close" aria-label="Close assistant">×</button>
          </div>

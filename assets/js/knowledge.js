@@ -126,7 +126,7 @@
       id: "boundaries",
       keywords: ["synthetic", "real data", "boundary", "production", "validated", "llm", "api", "backend"],
       title: "Demo boundaries",
-      body: "Everything here is synthetic demonstration data — no real project, agency, employer, contractor, or vendor. There is no backend, no LLM call, no analytics, and no tracking; this assistant is scripted from the knowledge library, not a live AI. No predictive-accuracy validation has been performed, and every recommended action requires named human approval."
+      body: "Everything here is synthetic demonstration data — no real project, agency, employer, contractor, or vendor. There is no backend, no LLM call, no analytics, and no tracking; this assistant is scripted from the knowledge library. No predictive-accuracy validation has been performed, and every recommended action requires named human approval."
     }
   ];
 
