@@ -50,7 +50,8 @@
     // Reuse the shared renderers, scoped to this page's containers.
     LinApp.renderLedger(p, root.querySelector(".detail-ledger"));
     LinApp.renderDecisionCard(p, root.querySelector(".detail-decision"));
-    LinModules.renderProjectModules(p, root.querySelector(".detail-modules"));
+    // HUD-depth per-project deep dive (chart + why-grid + reasoning + rule)
+    LinDeepDive.render(p, root.querySelector(".detail-modules"));
 
     wireBack(root);
   }

@@ -8,12 +8,14 @@
 (function () {
   "use strict";
 
+  // Exact equal thirds (120° each). Angles are screen-polar:
+  // 0° = right, positive = clockwise (y grows downward in polar()).
+  // internal key stays "combined" (and SYN-CMB codes are unchanged);
+  // only the human-facing sector label is "HYBRID".
   const SECTORS = {
-    design:       { label: "DESIGN",       start: -90,  end: -18 },
-    construction: { label: "CONSTRUCTION", start: -18,  end: 54  },
-    // internal key stays "combined" (and SYN-CMB codes are unchanged);
-    // only the human-facing sector label is "HYBRID"
-    combined:     { label: "HYBRID",       start: 54,   end: 126 }
+    design:       { label: "DESIGN",       start: -90, end: 30  },
+    construction: { label: "CONSTRUCTION", start: 30,  end: 150 },
+    combined:     { label: "HYBRID",       start: 150, end: 270 }
   };
 
   const STATUS_COLOR = {
@@ -66,26 +68,46 @@
     const svg = $("#radar-svg");
     svg.innerHTML = "";
 
-    // zone bands: green / amber / red-review / critical rim
-    const bands = [
-      { r: 0.30 * 180, fill: "var(--zone-green)" },
-      { r: 0.55 * 180, fill: "var(--zone-amber)" },
-      { r: 0.80 * 180, fill: "var(--zone-red)" },
-      { r: 0.92 * 180, fill: "var(--zone-crit)" }
+    // health zones as TRUE annuli (even-odd rings), so each band shows
+    // only its own fill — no stacked translucent wash.
+    const circlePath = (r) =>
+      `M ${CENTER + r} ${CENTER} A ${r} ${r} 0 1 0 ${CENTER - r} ${CENTER} A ${r} ${r} 0 1 0 ${CENTER + r} ${CENTER} Z`;
+    const ringPath = (rOuter, rInner) => circlePath(rOuter) + " " + circlePath(rInner);
+
+    const ZONE_EDGES = { green: 0.34 * 180, amber: 0.62 * 180, red: R_MAX };
+    // green inner disc
+    svg.appendChild(el("circle", {
+      cx: CENTER, cy: CENTER, r: ZONE_EDGES.green, fill: "var(--zone-green)"
+    }));
+    // amber ring
+    const amberRing = el("path", { d: ringPath(ZONE_EDGES.amber, ZONE_EDGES.green), fill: "var(--zone-amber)" });
+    amberRing.setAttribute("fill-rule", "evenodd");
+    svg.appendChild(amberRing);
+    // red-review outer ring
+    const redRing = el("path", { d: ringPath(ZONE_EDGES.red, ZONE_EDGES.amber), fill: "var(--zone-red)" });
+    redRing.setAttribute("fill-rule", "evenodd");
+    svg.appendChild(redRing);
+
+    // labeled ring boundaries
+    [ZONE_EDGES.green, ZONE_EDGES.amber, ZONE_EDGES.red].forEach((r) => {
+      svg.appendChild(el("circle", {
+        cx: CENTER, cy: CENTER, r, fill: "none",
+        stroke: "var(--ring-line)", "stroke-width": "1",
+        "stroke-dasharray": r === ZONE_EDGES.red ? "none" : "2 5"
+      }));
+    });
+    const zoneLabels = [
+      { r: ZONE_EDGES.green / 2,                          text: "GREEN",      color: "var(--clear-green)" },
+      { r: (ZONE_EDGES.green + ZONE_EDGES.amber) / 2,     text: "AMBER",      color: "var(--radar-amber)" },
+      { r: (ZONE_EDGES.amber + ZONE_EDGES.red) / 2 + 6,   text: "RED-REVIEW", color: "var(--alarm-red)" }
     ];
-    // draw from outer to inner so inner sits on top
-    for (let i = bands.length - 1; i >= 0; i--) {
-      svg.appendChild(el("circle", {
-        cx: CENTER, cy: CENTER, r: bands[i].r, fill: bands[i].fill,
-        stroke: "var(--ring-line)", "stroke-width": "1"
-      }));
-    }
-    // ring ticks
-    [0.30, 0.55, 0.80].forEach((f) => {
-      svg.appendChild(el("circle", {
-        cx: CENTER, cy: CENTER, r: f * 180, fill: "none",
-        stroke: "var(--ring-line)", "stroke-width": "1", "stroke-dasharray": "2 5"
-      }));
+    zoneLabels.forEach((z) => {
+      const t = el("text", {
+        x: CENTER, y: CENTER - z.r, "text-anchor": "middle",
+        class: "zone-label", fill: z.color
+      });
+      t.textContent = z.text;
+      svg.appendChild(t);
     });
 
     // sector dividers + labels
@@ -98,7 +120,7 @@
         }));
       });
       const mid = (sec.start + sec.end) / 2;
-      const lp = polar(mid, R_MAX + 14);
+      const lp = polar(mid, R_MAX + 20);
       const t = el("text", {
         x: lp.x, y: lp.y, "text-anchor": "middle", "dominant-baseline": "middle",
         class: "sector-label"
@@ -124,7 +146,7 @@
     //           so distance still means drift);
     //   pass 2: label positions, nudged apart vertically when they collide,
     //           with thin leader lines back to the dot when nudged.
-    const BAND_EDGES = [R_MIN - 6, 0.30 * 180, 0.55 * 180, 0.80 * 180, R_MAX + 2];
+    const BAND_EDGES = [R_MIN - 6, 0.34 * 180, 0.62 * 180, R_MAX + 2];
 
     const plots = LIN_PROJECTS.map((p) => {
       const ang = hashAngle(p);
