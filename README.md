@@ -56,7 +56,7 @@ explicit, readable rules — not model output and not informal judgment.
   portfolio (recoverable, persisted, logged); Restore brings it back.
 - **Knowledge** — the curated method library and term lens. The floating
   **Lin Guide** assistant (bottom-right, every page) is a scripted helper that
-  answers only from this library — it is not a live AI and makes no API calls.
+  answers only from this library and makes no API calls.
 - **Timezone** — top-bar selector, default Eastern (EST/EDT), persisted.
   Displayed timestamps follow the selection; audit JSON always keeps UTC ISO.
 
