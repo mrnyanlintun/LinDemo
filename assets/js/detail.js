@@ -44,12 +44,22 @@
          <section class="panel detail-ledger" aria-label="Signal ledger (project detail)"></section>
          <section class="panel detail-decision" aria-label="PCEIF governance decision (project detail)"></section>
        </div>
+       <section class="panel detail-ingest" aria-label="Ingest document to this project">
+         <details class="kn-topic">
+           <summary>Ingest doc to this project (${esc(p.id)})</summary>
+           <p class="kn-sub" style="margin-top:8px">Same visible keyword rules and mandatory Approve/Reject as the Manage Projects ingest — pre-scoped to this project.</p>
+           <div class="detail-ingest-form"></div>
+         </details>
+       </section>
        <h2 class="detail-mods-h">Five signals — computed for ${esc(p.id)}</h2>
        <div class="detail-modules"></div>`;
 
     // Reuse the shared renderers, scoped to this page's containers.
     LinApp.renderLedger(p, root.querySelector(".detail-ledger"));
     LinApp.renderDecisionCard(p, root.querySelector(".detail-decision"));
+    // Pre-scoped ingest — same shared logic and event log as Manage Projects.
+    LinIngest.renderScopedIngest(p.id, root.querySelector(".detail-ingest-form"),
+      (id) => render(id)); // on approve: re-render detail so ledger/deep dive reflect the delta
     // HUD-depth per-project deep dive (chart + why-grid + reasoning + rule)
     LinDeepDive.render(p, root.querySelector(".detail-modules"));
 

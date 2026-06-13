@@ -177,7 +177,7 @@
 
     const table = decisions.map(({ p, d }) =>
       `<tr>
-         <td class="mod-mono">${esc(p.id)}</td>
+         <td><button class="mod-link mod-mono" data-open="${esc(p.id)}" title="Open ${esc(p.id)} project detail">${esc(p.id)}</button></td>
          <td><span class="pill pill-${d.healthState.toLowerCase().replace("-review", "")}">${esc(d.healthState)}</span></td>
          <td>${esc(d.authority)}</td>
          <td>${d.fairnessGateRequired ? "⚑ gate required" : "—"}</td>
@@ -223,6 +223,9 @@
     const root = document.getElementById("modules-root");
     if (!root) return;
     root.innerHTML = BANNER + moduleCardsHtml(LIN_PROJECTS);
+    // project codes in the ABM table open that project's detail (click or keyboard)
+    root.querySelectorAll("[data-open]").forEach((b) =>
+      b.addEventListener("click", () => LinApp.openDetail(b.dataset.open)));
   }
 
   /* All five modules computed for ONE project (Project Detail page).

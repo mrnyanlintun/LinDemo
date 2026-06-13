@@ -215,8 +215,40 @@
       : `<p class="kn-sub">No ingest events this browser yet.</p>`;
   }
 
-  function renderProposal(prop) {
-    const box = document.getElementById("ingest-result");
+  /* ---------- shared, container-scoped ingest form ----------
+     One implementation, two hosts: the Manage Projects panel (with a
+     project selector) and the Project Detail page (pre-scoped to the
+     open project — fixedId set, no selector). All controls are
+     class-scoped inside the container so both can coexist in the DOM. */
+
+  function ingestFormHtml(fixedId) {
+    const projectField = fixedId
+      ? `<input type="hidden" class="ig-project" value="${esc(fixedId)}" />`
+      : `<label class="rationale-label">Project
+           <select class="ig-project ig-input">${projectOptions()}</select></label>`;
+    return `
+      <div class="kn-grid">
+        <div>
+          ${projectField}
+          <label class="rationale-label">Document type
+            <select class="ig-doctype ig-input">${DOC_TYPES.map((d) => `<option>${d}</option>`).join("")}</select></label>
+          <details class="kn-topic"><summary>The rules that will run (visible by design)</summary>
+            <ul class="ig-fired">${INGEST_RULES.map((r) =>
+              `<li><span class="mod-mono">${esc(r.id)}</span> ${esc(r.label)} — /${esc(r.pattern.source)}/i → doc ${r.scoreDelta >= 0 ? "+" : ""}${r.scoreDelta.toFixed(2)}, health ${r.healthDelta >= 0 ? "+" : ""}${r.healthDelta}</li>`).join("")}
+            </ul>
+          </details>
+        </div>
+        <div>
+          <label class="rationale-label">Document text
+            <textarea class="ig-text ig-textarea" placeholder="Paste document text here, or load a file below…"></textarea></label>
+          <input type="file" class="ig-file" accept=".txt,.csv,.md,.text" aria-label="Load text file" />
+          <div class="dc-actions"><button class="btn primary ig-run">Run extraction</button></div>
+        </div>
+      </div>
+      <div class="ig-result" aria-live="polite"></div>`;
+  }
+
+  function renderProposal(prop, box, onApplied) {
     if (!prop) {
       box.innerHTML = `<p class="kn-sub">No risk rules matched this text. No change proposed — nothing to approve.</p>`;
       return;
@@ -235,46 +267,55 @@
        </div>
        ${prop.excerpt ? `<p class="ig-excerpt">Evidence excerpt: “${esc(prop.excerpt)}”</p>` : ""}
        <div class="dc-actions">
-         <button id="ingest-approve" class="btn primary">Approve — apply to project</button>
-         <button id="ingest-reject" class="btn">Reject — discard</button>
+         <button class="btn primary ig-approve">Approve — apply to project</button>
+         <button class="btn ig-reject">Reject — discard</button>
        </div>
        <p class="dc-note">Nothing changes until Approve is clicked. This is the same human-review boundary as the decision card.</p>`;
 
-    document.getElementById("ingest-approve").addEventListener("click", () => {
+    box.querySelector(".ig-approve").addEventListener("click", () => {
       applyProposal(prop);
       logEvent(`APPROVED ingest (${prop.docType}) on ${prop.projectId}: doc ${prop.from.score.toFixed(2)}→${prop.to.score.toFixed(2)}, health ${prop.from.health}→${prop.to.health}. Rules: ${prop.fired.map((f) => f.rule.id).join(", ") || "none"}.`);
       box.innerHTML = `<p class="kn-sub">Applied. The project has been re-plotted on the portfolio scope and re-run through the decision rules.</p>`;
       pendingProposal = null;
-      if (window.LinApp) { LinApp.refresh(); LinApp.selectProject(prop.projectId); }
+      if (window.LinApp) LinApp.refresh();
+      if (onApplied) onApplied(prop.projectId);
     });
-    document.getElementById("ingest-reject").addEventListener("click", () => {
+    box.querySelector(".ig-reject").addEventListener("click", () => {
       logEvent(`REJECTED ingest (${prop.docType}) on ${prop.projectId}. No state change.`);
       box.innerHTML = `<p class="kn-sub">Proposal discarded. No project state was changed.</p>`;
       pendingProposal = null;
     });
   }
 
-  function wireIngestControls() {
-    document.getElementById("ig-file").addEventListener("change", (e) => {
+  function wireIngestForm(container, onApplied) {
+    const $c = (sel) => container.querySelector(sel);
+    $c(".ig-file").addEventListener("change", (e) => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
       const reader = new FileReader();
-      reader.onload = () => { document.getElementById("ig-text").value = String(reader.result || "").slice(0, 20000); };
+      reader.onload = () => { $c(".ig-text").value = String(reader.result || "").slice(0, 20000); };
       reader.readAsText(f);
     });
-
-    document.getElementById("ig-run").addEventListener("click", () => {
-      const projectId = document.getElementById("ig-project").value;
-      const docType = document.getElementById("ig-doctype").value;
-      const text = document.getElementById("ig-text").value;
+    $c(".ig-run").addEventListener("click", () => {
+      const projectId = $c(".ig-project").value;
+      const docType = $c(".ig-doctype").value;
+      const text = $c(".ig-text").value;
+      const box = $c(".ig-result");
       if (!text.trim()) {
-        document.getElementById("ingest-result").innerHTML = `<p class="kn-sub">Paste or load some document text first.</p>`;
+        box.innerHTML = `<p class="kn-sub">Paste or load some document text first.</p>`;
         return;
       }
       pendingProposal = proposeIngest(projectId, docType, text);
       logEvent(`Ran extraction (${docType}) on ${projectId}: ${pendingProposal && pendingProposal.fired.length ? pendingProposal.fired.length + " rule(s) fired — awaiting human review" : "no rules fired"}.`);
-      renderProposal(pendingProposal && pendingProposal.fired.length ? pendingProposal : null);
+      renderProposal(pendingProposal && pendingProposal.fired.length ? pendingProposal : null, box, onApplied);
     });
+  }
+
+  /* Project Detail host: pre-scoped ingest, no selector (4c). */
+  function renderScopedIngest(projectId, container, onApplied) {
+    if (!container) return;
+    container.innerHTML = ingestFormHtml(projectId);
+    wireIngestForm(container, onApplied);
   }
 
   /* ---------- Manage Projects page ----------
@@ -312,8 +353,8 @@
       `<div class="kn-grid">
         <section class="panel">
           <p class="eyebrow">Create project</p>
-          <h2 class="kn-h">New synthetic project</h2>
-          <p class="kn-sub">Generates the next SYN code, seeds baseline synthetic signals, and plots it on the portfolio scope through the same decision.js rules. Persists in this browser only (localStorage).</p>
+          <h2 class="kn-h">New project</h2>
+          <p class="kn-sub">Generates the next SYN code, seeds baseline synthetic signals, and plots it on the portfolio scope through the same decision.js rules. Client-side and synthetic; persists in this browser only (localStorage).</p>
           <label class="rationale-label" for="np-name">Project name</label>
           <input id="np-name" class="ig-input" maxlength="80" placeholder="e.g. Concourse Wayfinding Refresh" />
           <label class="rationale-label" for="np-sector">Delivery type</label>
@@ -322,7 +363,7 @@
             <option value="construction">Construction</option>
             <option value="combined">Hybrid</option>
           </select>
-          <div class="dc-actions"><button id="np-create" class="btn primary">Create synthetic project</button></div>
+          <div class="dc-actions"><button id="np-create" class="btn primary">Create project</button></div>
           <p id="np-msg" class="kn-sub" aria-live="polite"></p>
         </section>
 
@@ -338,26 +379,7 @@
         <p class="eyebrow">Ingest document</p>
         <h2 class="kn-h">Run rule extraction for the selected project</h2>
         <p class="kn-sub">Paste or upload text (.txt / .csv / PDF-extracted text). The visible keyword rules below run client-side — no NLP, no LLM — and a human must Approve before anything changes.</p>
-        <div class="kn-grid">
-          <div>
-            <label class="rationale-label" for="ig-project">Project</label>
-            <select id="ig-project" class="ig-input">${projectOptions()}</select>
-            <label class="rationale-label" for="ig-doctype">Document type</label>
-            <select id="ig-doctype" class="ig-input">${DOC_TYPES.map((d) => `<option>${d}</option>`).join("")}</select>
-            <details class="kn-topic"><summary>The rules that will run (visible by design)</summary>
-              <ul class="ig-fired">${INGEST_RULES.map((r) =>
-                `<li><span class="mod-mono">${esc(r.id)}</span> ${esc(r.label)} — /${esc(r.pattern.source)}/i → doc ${r.scoreDelta >= 0 ? "+" : ""}${r.scoreDelta.toFixed(2)}, health ${r.healthDelta >= 0 ? "+" : ""}${r.healthDelta}</li>`).join("")}
-              </ul>
-            </details>
-          </div>
-          <div>
-            <label class="rationale-label" for="ig-text">Document text</label>
-            <textarea id="ig-text" class="ig-textarea" placeholder="Paste document text here, or load a file below…"></textarea>
-            <input type="file" id="ig-file" accept=".txt,.csv,.md,.text" class="ig-file" aria-label="Load text file" />
-            <div class="dc-actions"><button id="ig-run" class="btn primary">Run extraction</button></div>
-          </div>
-        </div>
-        <div id="ingest-result" aria-live="polite"></div>
+        ${ingestFormHtml(null)}
       </section>
 
       <section class="panel" style="margin-top:18px">
@@ -366,7 +388,8 @@
       </section>`;
 
     renderLog();
-    wireIngestControls();
+    const ingestPanel = root.querySelector("#ingest-panel");
+    wireIngestForm(ingestPanel, (id) => { if (window.LinApp) LinApp.selectProject(id); });
 
     document.getElementById("np-create").addEventListener("click", () => {
       const name = document.getElementById("np-name").value.trim();
@@ -377,7 +400,7 @@
       if (window.LinApp) LinApp.refresh();
       renderManagePage();
       document.getElementById("np-msg").textContent = `Created ${p.id}. It is on the portfolio scope with a derived decision.`;
-      document.getElementById("ig-project").value = p.id;
+      document.querySelector("#ingest-panel .ig-project").value = p.id;
     });
 
     root.querySelectorAll("[data-archive]").forEach((b) =>
@@ -388,11 +411,11 @@
       b.addEventListener("click", () => LinApp.openDetail(b.dataset.detail)));
     root.querySelectorAll("[data-ingest]").forEach((b) =>
       b.addEventListener("click", () => {
-        document.getElementById("ig-project").value = b.dataset.ingest;
-        document.getElementById("ingest-panel").scrollIntoView({ block: "start" });
-        document.getElementById("ig-text").focus();
+        root.querySelector("#ingest-panel .ig-project").value = b.dataset.ingest;
+        root.querySelector("#ingest-panel").scrollIntoView({ block: "start" });
+        root.querySelector("#ingest-panel .ig-text").focus();
       }));
   }
 
-  window.LinIngest = { mergeUserProjects, renderManagePage, INGEST_RULES };
+  window.LinIngest = { mergeUserProjects, renderManagePage, renderScopedIngest, INGEST_RULES };
 })();
